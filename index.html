@@ -1804,8 +1804,9 @@ function render(now){
       }
     } else {
       const geometry = get3DGeometry(state.shapeType);
-      const rx = state.rotX + Math.sin(animPhase * 0.1) * 20;
-      const ry = state.rotY + animPhase * 10;
+      // Continuous auto-rotation speeds reduced significantly for slow spinning
+      const rx = state.rotX + Math.sin(animPhase * 0.005) * 5;
+      const ry = state.rotY + animPhase * 0.15;
       const rz = state.rotZ;
 
       geometry.forEach(stroke => {
