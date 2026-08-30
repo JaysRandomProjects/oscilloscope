@@ -3,1343 +3,718 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>Virtual Oscilloscope - 3D Precision</title>
+<title>Precision Laboratory Oscilloscope</title>
 
 <style>
-:root{
-  --bezel-dark:#1a1c1a;
-  --bezel-mid:#26292a;
-  --bezel-light:#33373a;
-  --panel-bg:#202325;
-  --panel-border:#3a3f42;
-  --screen-bg:#04140c;
-  --screen-border:#0a0a0a;
-  --phosphor:#4dffa0;
-  --phosphor-dim:#1f6b46;
-  --accent:#ff9c3d;
-  --text-main:#d8ded9;
-  --text-dim:#8a9490;
-  --led-on:#4dff7a;
-  --font-mono:ui-monospace,"SF Mono","Consolas","Roboto Mono",monospace;
-  --font-ui:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+:root {
+  --bezel-outer: #151719;
+  --bezel-inner: #24282c;
+  --panel-bg: #1c1f22;
+  --panel-border: #34393e;
+  --screen-bg: #030d07;
+  --phosphor: #33ff77;
+  --phosphor-glow: rgba(51, 255, 119, 0.4);
+  --ch1-color: #ffcc00;
+  --ch2-color: #00ccff;
+  --text-main: #d0d7de;
+  --text-dim: #7d8590;
+  --knob-cap: #30363d;
+  --knob-body: #161b22;
+  --led-green: #3fb950;
+  --led-red: #f85149;
+  --font-mono: "SF Mono", "Consolas", "Roboto Mono", monospace;
+  --font-ui: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
 }
 
-*{box-sizing:border-box;}
+* { box-sizing: border-box; user-select: none; }
 
-html,body{
-  margin:0;
-  padding:0;
-  height:100%;
-  background:radial-gradient(ellipse at 50% -10%,#2b2f31 0%,#101213 55%,#0a0b0b 100%);
-  color:var(--text-main);
-  font-family:var(--font-ui);
-  -webkit-tap-highlight-color:transparent;
+html, body {
+  margin: 0; padding: 0; height: 100%;
+  background: radial-gradient(circle at 50% 30%, #22262a 0%, #0d0e10 100%);
+  color: var(--text-main); font-family: var(--font-ui);
 }
 
-.app{
-  min-height:100%;
-  display:flex;
-  flex-direction:column;
-  align-items:center;
-  padding:16px;
-  gap:14px;
+.app {
+  min-height: 100%; display: flex; flex-direction: column;
+  align-items: center; justify-content: center; padding: 12px; gap: 10px;
 }
 
-.title-row{
-  display:flex;
-  align-items:baseline;
-  gap:10px;
-  color:var(--text-dim);
-  font-family:var(--font-mono);
-  letter-spacing:2px;
-  font-size:12px;
-  text-transform:uppercase;
+.header {
+  display: flex; justify-content: space-between; align-width: 100%;
+  max-width: 1280px; width: 100%; padding: 0 4px; font-family: var(--font-mono);
+  font-size: 11px; color: var(--text-dim); letter-spacing: 1px;
 }
 
-.title-row .brand{
-  color:var(--phosphor);
-  font-weight:700;
-  font-size:14px;
-  text-shadow:0 0 8px rgba(77,255,160,.55);
+.scope-container {
+  width: 100%; max-width: 1280px;
+  background: linear-gradient(180deg, var(--bezel-inner) 0%, var(--bezel-outer) 100%);
+  border-radius: 12px; padding: 16px;
+  box-shadow: 0 25px 50px -12px rgba(0,0,0,0.8), inset 0 1px 1px rgba(255,255,255,0.1);
+  display: grid; grid-template-columns: minmax(0, 1.3fr) 380px; gap: 16px;
+  border: 1px solid #000;
 }
 
-.instrument{
-  width:100%;
-  max-width:1180px;
-  background:linear-gradient(180deg,var(--bezel-light) 0%,var(--bezel-mid) 6%,var(--bezel-dark) 100%);
-  border-radius:18px;
-  padding:16px;
-  box-shadow:
-    0 30px 60px rgba(0,0,0,.55),
-    inset 0 1px 0 rgba(255,255,255,.06),
-    inset 0 -2px 6px rgba(0,0,0,.6);
-  display:grid;
-  grid-template-columns:minmax(0,1fr) 300px;
-  gap:14px;
+@media(max-width: 1024px) {
+  .scope-container { grid-template-columns: 1fr; }
 }
 
-@media(max-width:880px){
-  .instrument{grid-template-columns:1fr;}
+.screen-assembly {
+  background: #000; border-radius: 8px; padding: 12px;
+  border: 2px solid #111; box-shadow: inset 0 0 20px rgba(0,0,0,0.9);
+  display: flex; flex-direction: column; gap: 8px;
 }
 
-.screen-wrap{
-  background:linear-gradient(180deg,#111 0%,#0c0c0c 100%);
-  border-radius:12px;
-  padding:14px;
-  display:flex;
-  flex-direction:column;
-  gap:10px;
-  border:1px solid #000;
-  box-shadow:inset 0 2px 10px rgba(0,0,0,.7);
+.screen-header {
+  display: flex; justify-content: space-between; font-family: var(--font-mono);
+  font-size: 11px; background: #080a09; padding: 6px 10px; border-radius: 4px;
+  border: 1px solid #151a17; color: var(--phosphor);
 }
 
-.screen-topbar{
-  display:flex;
-  align-items:center;
-  justify-content:space-between;
-  font-family:var(--font-mono);
-  font-size:11px;
-  color:var(--text-dim);
-  padding:0 2px;
+.status-badge {
+  display: inline-flex; align-items: center; gap: 6px; font-weight: bold;
 }
 
-.status-dot{
-  display:inline-block;
-  width:8px;
-  height:8px;
-  border-radius:50%;
-  background:#3a4038;
-  margin-right:6px;
-  vertical-align:middle;
-  box-shadow:inset 0 0 2px rgba(0,0,0,.6);
+.led {
+  width: 8px; height: 8px; border-radius: 50%; background: #333;
+}
+.led.green { background: var(--led-green); box-shadow: 0 0 8px var(--led-green); }
+.led.red { background: var(--led-red); box-shadow: 0 0 8px var(--led-red); }
+
+.screen-viewport {
+  position: relative; width: 100%; aspect-ratio: 4 / 3;
+  background: var(--screen-bg); border-radius: 4px; overflow: hidden;
+  box-shadow: inset 0 0 50px rgba(0,0,0,0.95);
+  border: 1px solid #122419;
 }
 
-.status-dot.on{
-  background:var(--led-on);
-  box-shadow:0 0 8px var(--led-on),0 0 2px var(--led-on);
+canvas#scopeCanvas {
+  position: absolute; inset: 0; width: 100%; height: 100%; display: block;
 }
 
-.readout-group{
-  display:flex;
-  gap:14px;
-  flex-wrap:wrap;
+.screen-overlay {
+  position: absolute; inset: 0; pointer-events: none;
+  background: radial-gradient(circle at 50% 50%, transparent 60%, rgba(0,0,0,0.6) 100%);
 }
 
-.readout{color:var(--phosphor-dim);}
-.readout b{color:var(--phosphor);font-weight:600;}
-
-.screen-frame{
-  position:relative;
-  width:100%;
-  aspect-ratio:4 / 3;
-  background:radial-gradient(ellipse at 50% 40%,#0a2a1a 0%,var(--screen-bg) 70%);
-  border-radius:8px;
-  border:2px solid var(--screen-border);
-  overflow:hidden;
-  box-shadow:
-    inset 0 0 40px rgba(0,0,0,.85),
-    inset 0 0 90px rgba(0,0,0,.6);
+.control-panel {
+  background: var(--panel-bg); border: 1px solid var(--panel-border);
+  border-radius: 8px; padding: 12px; display: flex; flex-direction: column;
+  gap: 12px; max-height: 640px; overflow-y: auto;
 }
 
-canvas#scope{
-  position:absolute;
-  top:0;
-  left:0;
-  width:100%;
-  height:100%;
-  display:block;
+.panel-section {
+  background: #14171a; border: 1px solid #282d33; border-radius: 6px;
+  padding: 10px; display: flex; flex-direction: column; gap: 8px;
 }
 
-.screen-vignette{
-  position:absolute;
-  inset:0;
-  pointer-events:none;
-  background:radial-gradient(ellipse at 50% 50%,transparent 55%,rgba(0,0,0,.55) 100%);
+.section-title {
+  font-family: var(--font-mono); font-size: 10px; text-transform: uppercase;
+  color: var(--text-dim); letter-spacing: 1px; border-bottom: 1px solid #282d33;
+  padding-bottom: 4px; margin-bottom: 2px; display: flex; justify-content: space-between;
 }
 
-.screen-glass{
-  position:absolute;
-  inset:0;
-  pointer-events:none;
-  background:linear-gradient(135deg,rgba(255,255,255,.05) 0%,transparent 30%);
+.control-grid {
+  display: grid; grid-template-columns: repeat(auto-fit, minmax(80px, 1fr)); gap: 8px;
 }
 
-.screen-footbar{
-  display:flex;
-  justify-content:space-between;
-  align-items:center;
-  font-family:var(--font-mono);
-  font-size:10px;
-  color:var(--text-dim);
-  padding:0 2px;
+.knob-control {
+  display: flex; flex-direction: column; align-items: center; gap: 4px;
 }
 
-.panel{
-  background:var(--panel-bg);
-  border:1px solid var(--panel-border);
-  border-radius:12px;
-  padding:14px;
-  display:flex;
-  flex-direction:column;
-  gap:12px;
-  max-height:none;
-  overflow-y:auto;
+.knob-label {
+  font-family: var(--font-mono); font-size: 9px; color: var(--text-dim); text-align: center;
 }
 
-.panel h3{
-  margin:0 0 2px 0;
-  font-size:10px;
-  letter-spacing:1.5px;
-  text-transform:uppercase;
-  color:var(--text-dim);
-  font-family:var(--font-mono);
-  border-bottom:1px solid var(--panel-border);
-  padding-bottom:6px;
+.knob {
+  width: 44px; height: 44px; border-radius: 50%;
+  background: conic-gradient(from 180deg, var(--knob-body), var(--knob-cap), var(--knob-body));
+  border: 2px solid #30363d; position: relative; cursor: pointer;
+  box-shadow: 0 4px 6px rgba(0,0,0,0.4); touch-action: none;
 }
 
-.mode-tabs{
-  display:grid;
-  grid-template-columns:repeat(3,1fr);
-  gap:6px;
+.knob::after {
+  content: ''; position: absolute; top: 4px; left: 50%; transform: translateX(-50%);
+  width: 3px; height: 10px; background: var(--phosphor); border-radius: 2px;
 }
 
-.mode-tab{
-  background:#181a1b;
-  border:1px solid var(--panel-border);
-  color:var(--text-dim);
-  font-family:var(--font-mono);
-  font-size:11px;
-  letter-spacing:.5px;
-  padding:8px 4px;
-  border-radius:6px;
-  cursor:pointer;
-  text-align:center;
-  transition:all .12s ease;
+.knob-value {
+  font-family: var(--font-mono); font-size: 9px; color: var(--phosphor);
 }
 
-.mode-tab.active{
-  color:#04140c;
-  background:var(--phosphor);
-  border-color:var(--phosphor);
-  box-shadow:0 0 10px rgba(77,255,160,.5);
-  font-weight:700;
+.btn-group { display: flex; gap: 4px; width: 100%; }
+
+.btn {
+  flex: 1; padding: 6px 4px; background: #21262d; border: 1px solid #363b42;
+  border-radius: 4px; color: var(--text-main); font-family: var(--font-mono);
+  font-size: 10px; cursor: pointer; text-align: center; transition: all 0.1s;
 }
 
-.field{
-  display:flex;
-  flex-direction:column;
-  gap:4px;
+.btn:hover { background: #30363d; }
+.btn.active {
+  background: var(--phosphor); color: #000; font-weight: bold;
+  border-color: var(--phosphor); box-shadow: 0 0 8px var(--phosphor-glow);
 }
 
-.field-row{
-  display:flex;
-  justify-content:space-between;
-  align-items:baseline;
-  font-size:11px;
-  color:var(--text-dim);
-  font-family:var(--font-mono);
+select {
+  background: #0d1117; color: var(--text-main); border: 1px solid #30363d;
+  padding: 6px; border-radius: 4px; font-family: var(--font-mono); font-size: 10px;
+  width: 100%; outline: none;
 }
 
-.field-row .val{color:var(--phosphor);}
+.readout-val { color: var(--phosphor); font-weight: bold; }
 
-select,input[type=range],input[type=text],input[type=file]{
-  width:100%;
-}
-
-select{
-  background:#15171a;
-  color:var(--text-main);
-  border:1px solid var(--panel-border);
-  border-radius:6px;
-  padding:7px 8px;
-  font-family:var(--font-ui);
-  font-size:12px;
-}
-
-input[type=range]{
-  -webkit-appearance:none;
-  appearance:none;
-  height:4px;
-  border-radius:2px;
-  background:#15171a;
-  border:1px solid #000;
-  outline:none;
-}
-
-input[type=range]::-webkit-slider-thumb{
-  -webkit-appearance:none;
-  appearance:none;
-  width:16px;
-  height:16px;
-  border-radius:50%;
-  background:linear-gradient(180deg,#eee,#999);
-  border:1px solid #000;
-  box-shadow:0 0 4px rgba(0,0,0,.6);
-  cursor:pointer;
-  margin-top:-1px;
-}
-
-input[type=range]::-moz-range-thumb{
-  width:16px;
-  height:16px;
-  border-radius:50%;
-  background:linear-gradient(180deg,#eee,#999);
-  border:1px solid #000;
-  cursor:pointer;
-}
-
-.toggle-row{
-  display:flex;
-  gap:6px;
-}
-
-.toggle-btn{
-  flex:1;
-  background:#181a1b;
-  border:1px solid var(--panel-border);
-  color:var(--text-dim);
-  font-family:var(--font-mono);
-  font-size:11px;
-  padding:7px 4px;
-  border-radius:6px;
-  cursor:pointer;
-  text-align:center;
-}
-
-.toggle-btn.active{
-  color:#04140c;
-  background:var(--accent);
-  border-color:var(--accent);
-  font-weight:700;
-}
-
-.btn-row{
-  display:flex;
-  gap:6px;
-  flex-wrap:wrap;
-}
-
-.btn{
-  flex:1;
-  min-width:60px;
-  background:#181a1b;
-  color:var(--text-main);
-  border:1px solid var(--panel-border);
-  border-radius:6px;
-  padding:9px 6px;
-  font-family:var(--font-ui);
-  font-size:12px;
-  font-weight:600;
-  cursor:pointer;
-  transition:all .12s ease;
-}
-
-.btn:hover{
-  border-color:var(--phosphor);
-  color:var(--phosphor);
-}
-
-.btn:active{
-  transform:translateY(1px);
-}
-
-.btn.primary{
-  background:var(--phosphor-dim);
-  border-color:var(--phosphor);
-  color:#eafff2;
-}
-
-.btn.danger:hover{
-  border-color:var(--accent);
-  color:var(--accent);
-}
-
-.file-drop{
-  border:1px dashed var(--panel-border);
-  border-radius:8px;
-  padding:10px;
-  text-align:center;
-  font-size:11px;
-  color:var(--text-dim);
-  cursor:pointer;
-  font-family:var(--font-mono);
-}
-
-.file-drop:hover{
-  border-color:var(--phosphor);
-  color:var(--phosphor);
-}
-
-.file-drop.has-file{
-  color:var(--phosphor);
-  border-color:var(--phosphor-dim);
-}
-
-input[type=file]{display:none;}
-
-.section{
-  display:flex;
-  flex-direction:column;
-  gap:10px;
-}
-
-.hidden{display:none!important;}
-
-.reset-btn{
-  width:100%;
-  background:#241414;
-  border:1px solid #4a2222;
-  color:#e6a3a3;
-  font-family:var(--font-mono);
-  font-size:11px;
-  letter-spacing:1px;
-  text-transform:uppercase;
-  padding:9px;
-  border-radius:6px;
-  cursor:pointer;
-}
-
-.reset-btn:hover{
-  background:#331818;
-  border-color:#7a2b2b;
-  color:#ffb3b3;
-}
-
-::-webkit-scrollbar{width:8px;}
-::-webkit-scrollbar-track{background:transparent;}
-::-webkit-scrollbar-thumb{
-  background:#3a3f42;
-  border-radius:4px;
-}
-
-footer{
-  font-family:var(--font-mono);
-  font-size:10px;
-  color:#4a504c;
-  letter-spacing:.5px;
-  padding:6px 0 18px;
-  text-align:center;
-}
 </style>
 </head>
-
 <body>
 
 <div class="app">
-  <div class="title-row">
-    <span class="brand">◉ SCOPE-1</span>
-    <span>Virtual Dual-Trace Oscilloscope &amp; Waveform Visualizer</span>
+  <div class="header">
+    <span>TEK-SIM 2465B ANALOG/DIGITAL OSCILLOSCOPE</span>
+    <span>CALIBRATION: PASSED</span>
   </div>
 
-  <div class="instrument">
-    <!-- SCREEN -->
-    <div class="screen-wrap">
-      <div class="screen-topbar">
-        <span>
-          <span class="status-dot on" id="powerLed"></span>
-          ONLINE
-        </span>
-        <div class="readout-group">
-          <span class="readout" id="readoutMode">MODE: <b>SHAPE</b></span>
-          <span class="readout" id="readoutSrc">SRC: <b>CIRCLE · 2D</b></span>
-          <span class="readout" id="readoutFps">FPS: <b>--</b></span>
-        </div>
+  <div class="scope-container">
+    <!-- DISPLAY CRT -->
+    <div class="screen-assembly">
+      <div class="screen-header">
+        <div class="status-badge"><span class="led green" id="trigLed"></span><span id="trigStatus">TRIG'D</span></div>
+        <div>MODE: <span id="readoutDisplayMode" class="readout-val">YT (CH1+CH2)</span></div>
+        <div>TIME/DIV: <span id="readoutTimeDiv" class="readout-val">1.0ms</span></div>
       </div>
 
-      <div class="screen-frame">
-        <canvas id="scope"></canvas>
-        <div class="screen-vignette"></div>
-        <div class="screen-glass"></div>
-      </div>
-
-      <div class="screen-footbar">
-        <span id="chanLabel">CH1: X&nbsp;&nbsp;CH2: Y</span>
-        <span id="timeLabel">TIME/DIV: --</span>
+      <div class="screen-viewport">
+        <canvas id="scopeCanvas"></canvas>
+        <div class="screen-overlay"></div>
       </div>
     </div>
 
-    <!-- CONTROLS -->
-    <div class="panel">
-      <div>
-        <h3>Signal Source</h3>
-        <div class="mode-tabs" id="modeTabs">
-          <div class="mode-tab" data-mode="waveform">Waveform</div>
-          <div class="mode-tab active" data-mode="shape">Shape</div>
-          <div class="mode-tab" data-mode="audio">Audio</div>
-        </div>
-      </div>
-
-      <!-- WAVEFORM -->
-      <div class="section hidden" id="sec-waveform">
-        <div class="field">
-          <div class="field-row"><span>Waveform Type</span></div>
-          <select id="waveformType">
-            <option value="sine">Sine</option>
-            <option value="square">Square</option>
-            <option value="triangle">Triangle</option>
-            <option value="sawtooth">Sawtooth</option>
-          </select>
-        </div>
-      </div>
-
-      <!-- SHAPE -->
-      <div class="section" id="sec-shape">
-        <div class="field">
-          <div class="field-row"><span>Shape</span></div>
-          <select id="shapeType">
-            <option value="circle">Circle / Sphere</option>
-            <option value="square">Square / Cube</option>
-            <option value="triangle">Triangle / Prism</option>
-            <option value="pentagon">Pentagon / Prism</option>
-            <option value="star">Star / Prism</option>
-            <option value="heart">Heart 3D</option>
-          </select>
-        </div>
-
-        <div class="field">
-          <div class="field-row"><span>Dimensions</span></div>
-          <div class="toggle-row">
-            <div class="toggle-btn active" data-dim="2d">2D</div>
-            <div class="toggle-btn" data-dim="3d">3D</div>
+    <!-- CONTROL HARDWARE PANEL -->
+    <div class="control-panel">
+      <!-- HORIZONTAL SYSTEM -->
+      <div class="panel-section">
+        <div class="section-title">Horizontal (Timebase)</div>
+        <div class="control-grid">
+          <div class="knob-control">
+            <div class="knob-label">TIME / DIV</div>
+            <div class="knob" id="knobTimeDiv"></div>
+            <div class="knob-value" id="valTimeDiv">1.0ms</div>
           </div>
-        </div>
-
-        <div class="section">
-          <h3>Shape Audio</h3>
-          <div class="btn-row">
-            <button class="btn primary" id="btnShapeAudio">▶ Play Shape</button>
-            <button class="btn danger" id="btnShapeStop">■ Stop</button>
-          </div>
-          <div style="font-size:10px; color:var(--text-dim); line-height:1.4;">
-            The shape's X/Y path is converted into stereo vector audio (Left = X, Right = Y).
+          <div class="knob-control">
+            <div class="knob-label">X POS</div>
+            <div class="knob" id="knobHPos"></div>
+            <div class="knob-value" id="valHPos">0.0</div>
           </div>
         </div>
       </div>
 
-      <!-- TRANSFORM -->
-      <div class="section" id="sec-transform">
-        <h3>Transform</h3>
-        <div class="field">
-          <div class="field-row">
-            <span>Position X</span>
-            <span class="val" id="v-posX">0.00</span>
-          </div>
-          <input type="range" id="posX" min="-0.7" max="0.7" step="0.01" value="0">
+      <!-- VERTICAL CHANNEL 1 -->
+      <div class="panel-section">
+        <div class="section-title">CH1 Vertical <span style="color:var(--ch1-color)">●</span></div>
+        <div class="btn-group">
+          <button class="btn active" id="btnCh1DC">DC</button>
+          <button class="btn" id="btnCh1AC">AC</button>
+          <button class="btn" id="btnCh1GND">GND</button>
         </div>
-
-        <div class="field">
-          <div class="field-row">
-            <span>Position Y</span>
-            <span class="val" id="v-posY">0.00</span>
+        <div class="control-grid" style="margin-top:6px;">
+          <div class="knob-control">
+            <div class="knob-label">VOLTS / DIV</div>
+            <div class="knob" id="knobCh1Volts"></div>
+            <div class="knob-value" id="valCh1Volts">1.0V</div>
           </div>
-          <input type="range" id="posY" min="-0.7" max="0.7" step="0.01" value="0">
+          <div class="knob-control">
+            <div class="knob-label">Y POS</div>
+            <div class="knob" id="knobCh1Pos"></div>
+            <div class="knob-value" id="valCh1Pos">0.0</div>
+          </div>
         </div>
+        <select id="selectCh1Signal" style="margin-top:6px;">
+          <option value="sine">Signal: 1 kHz Sine Wave</option>
+          <option value="square">Signal: 1 kHz Square Wave</option>
+          <option value="triangle">Signal: 1 kHz Triangle Wave</option>
+          <option value="cal">Signal: 1 kHz Calibrator Square (5V)</option>
+          <option value="lissajousX">Signal: Lissajous X (3D Vector)</option>
+        </select>
+      </div>
 
-        <div class="field">
-          <div class="field-row">
-            <span>Scale</span>
-            <span class="val" id="v-scale">1.00</span>
-          </div>
-          <input type="range" id="scale" min="0.2" max="2.5" step="0.01" value="1">
+      <!-- VERTICAL CHANNEL 2 -->
+      <div class="panel-section">
+        <div class="section-title">CH2 Vertical <span style="color:var(--ch2-color)">●</span></div>
+        <div class="btn-group">
+          <button class="btn active" id="btnCh2DC">DC</button>
+          <button class="btn" id="btnCh2AC">AC</button>
+          <button class="btn" id="btnCh2GND">GND</button>
         </div>
-
-        <div class="field" id="field-rotation2d">
-          <div class="field-row">
-            <span>Rotation</span>
-            <span class="val" id="v-rotation">0°</span>
+        <div class="control-grid" style="margin-top:6px;">
+          <div class="knob-control">
+            <div class="knob-label">VOLTS / DIV</div>
+            <div class="knob" id="knobCh2Volts"></div>
+            <div class="knob-value" id="valCh2Volts">1.0V</div>
           </div>
-          <input type="range" id="rotation" min="0" max="360" step="1" value="0">
+          <div class="knob-control">
+            <div class="knob-label">Y POS</div>
+            <div class="knob" id="knobCh2Pos"></div>
+            <div class="knob-value" id="valCh2Pos">0.0</div>
+          </div>
         </div>
+        <select id="selectCh2Signal" style="margin-top:6px;">
+          <option value="cosine">Signal: 1 kHz Cosine Wave</option>
+          <option value="sawtooth">Signal: 400 Hz Sawtooth</option>
+          <option value="noise">Signal: Thermal Noise</option>
+          <option value="lissajousY">Signal: Lissajous Y (3D Vector)</option>
+        </select>
+      </div>
 
-        <div class="field hidden" id="field-rotX">
-          <div class="field-row">
-            <span>Rotation X</span>
-            <span class="val" id="v-rotX">20°</span>
-          </div>
-          <input type="range" id="rotX" min="0" max="360" step="1" value="20">
+      <!-- TRIGGER ENGINE -->
+      <div class="panel-section">
+        <div class="section-title">Trigger Engine</div>
+        <div class="btn-group">
+          <button class="btn active" id="btnTrigAuto">AUTO</button>
+          <button class="btn" id="btnTrigNorm">NORM</button>
+          <button class="btn" id="btnTrigSingle">SINGLE</button>
         </div>
-
-        <div class="field hidden" id="field-rotY">
-          <div class="field-row">
-            <span>Rotation Y</span>
-            <span class="val" id="v-rotY">30°</span>
-          </div>
-          <input type="range" id="rotY" min="0" max="360" step="1" value="30">
+        <div class="btn-group" style="margin-top:4px;">
+          <button class="btn active" id="btnTrigSlopePos">EDGE +</button>
+          <button class="btn" id="btnTrigSlopeNeg">EDGE -</button>
         </div>
-
-        <div class="field hidden" id="field-rotZ">
-          <div class="field-row">
-            <span>Rotation Z</span>
-            <span class="val" id="v-rotZ">0°</span>
+        <div class="control-grid" style="margin-top:6px;">
+          <div class="knob-control">
+            <div class="knob-label">TRIG LEVEL</div>
+            <div class="knob" id="knobTrigLevel"></div>
+            <div class="knob-value" id="valTrigLevel">0.0V</div>
           </div>
-          <input type="range" id="rotZ" min="0" max="360" step="1" value="0">
+          <div class="knob-control">
+            <div class="knob-label">HOLD OFF</div>
+            <div class="knob" id="knobHoldOff"></div>
+            <div class="knob-value" id="valHoldOff">0.0ms</div>
+          </div>
         </div>
       </div>
 
-      <!-- SIGNAL -->
-      <div class="section" id="sec-signal">
-        <h3>Signal</h3>
-        <div class="field">
-          <div class="field-row">
-            <span>Frequency</span>
-            <span class="val" id="v-frequency">120.0</span>
-          </div>
-          <input type="range" id="frequency" min="20" max="880" step="1" value="120">
+      <!-- DISPLAY & XY MODE -->
+      <div class="panel-section">
+        <div class="section-title">Display Mode & CRT Controls</div>
+        <div class="btn-group">
+          <button class="btn active" id="btnModeYT">Y-T Dual</button>
+          <button class="btn" id="btnModeXY">X-Y Mode</button>
         </div>
-
-        <div class="field">
-          <div class="field-row">
-            <span>Amplitude</span>
-            <span class="val" id="v-amplitude">0.30</span>
+        <div class="control-grid" style="margin-top:6px;">
+          <div class="knob-control">
+            <div class="knob-label">INTENSITY</div>
+            <div class="knob" id="knobIntensity"></div>
+            <div class="knob-value" id="valIntensity">80%</div>
           </div>
-          <input type="range" id="amplitude" min="0" max="1" step="0.01" value="0.3">
-        </div>
-
-        <div class="field">
-          <div class="field-row">
-            <span>Phase</span>
-            <span class="val" id="v-phase">0°</span>
+          <div class="knob-control">
+            <div class="knob-label">PERSISTENCE</div>
+            <div class="knob" id="knobPersistence"></div>
+            <div class="knob-value" id="valPersistence">40%</div>
           </div>
-          <input type="range" id="phase" min="0" max="360" step="1" value="0">
-        </div>
-
-        <div class="field">
-          <div class="field-row">
-            <span>Spin Speed</span>
-            <span class="val" id="v-speed">0.15</span>
-          </div>
-          <input type="range" id="speed" min="0" max="1" step="0.01" value="0.15">
         </div>
       </div>
-
-      <!-- AUDIO -->
-      <div class="section hidden" id="sec-audio">
-        <h3>Audio Input</h3>
-        <div class="file-drop" id="fileDrop">Click to choose an audio file…</div>
-        <input type="file" id="audioFile" accept="audio/*">
-
-        <div class="field" id="audioDimensionField">
-          <div class="field-row"><span>Audio Display</span></div>
-          <div class="toggle-row">
-            <div class="toggle-btn active" data-audiodim="1d">1D Waveform</div>
-            <div class="toggle-btn" data-audiodim="2d">2D XY</div>
-          </div>
-        </div>
-
-        <div class="btn-row">
-          <button class="btn primary" id="btnPlay">▶ Play</button>
-          <button class="btn" id="btnPause">‖ Pause</button>
-          <button class="btn danger" id="btnStop">■ Stop</button>
-        </div>
-
-        <div class="field">
-          <div class="field-row">
-            <span>Seek</span>
-            <span class="val" id="v-seek">0:00 / 0:00</span>
-          </div>
-          <input type="range" id="seek" min="0" max="100" step="0.1" value="0">
-        </div>
-
-        <div class="field">
-          <div class="field-row">
-            <span>Volume</span>
-            <span class="val" id="v-volume">80%</span>
-          </div>
-          <input type="range" id="volume" min="0" max="100" step="1" value="80">
-        </div>
-      </div>
-
-      <!-- DISPLAY -->
-      <div class="section" id="sec-display">
-        <h3>Display</h3>
-        <div class="field">
-          <div class="field-row">
-            <span>Time / Zoom</span>
-            <span class="val" id="v-zoom">1.00×</span>
-          </div>
-          <input type="range" id="zoom" min="0.25" max="4" step="0.05" value="1">
-        </div>
-
-        <div class="field">
-          <div class="field-row">
-            <span>Persistence</span>
-            <span class="val" id="v-persistence">60</span>
-          </div>
-          <input type="range" id="persistence" min="0" max="100" step="1" value="60">
-        </div>
-
-        <div class="field">
-          <div class="field-row">
-            <span>Brightness</span>
-            <span class="val" id="v-brightness">70</span>
-          </div>
-          <input type="range" id="brightness" min="10" max="100" step="1" value="70">
-        </div>
-      </div>
-
-      <button class="reset-btn" id="btnReset">⟳ Reset to Defaults</button>
     </div>
   </div>
-
-  <footer>SCOPE-1 · 100% Mathematically Precise 3D Vector Visualizer</footer>
 </div>
-
-<audio id="audioPlayer" preload="metadata" style="display:none"></audio>
 
 <script>
 (function(){
 "use strict";
 
 /* =========================================================
-   STATE MANAGEMENT
+   HARDWARE OSCILLOSCOPE ENGINE STATE
    ========================================================= */
-const defaults = {
-  mode: 'shape',
-  waveformType: 'sine',
-  shapeType: 'circle',
-  is3D: false,
-  audioDimension: '1d',
-  posX: 0,
-  posY: 0,
-  scale: 1,
-  rotation: 0,
-  rotX: 20,
-  rotY: 30,
-  rotZ: 0,
-  frequency: 120,
-  amplitude: 0.3,
-  phase: 0,
-  speed: 0.15, // Low default speed for smooth slow rotation
-  zoom: 1,
-  persistence: 60,
-  brightness: 70,
-  volume: 80
+const ScopeState = {
+  // Horizontal Timebase Settings
+  timeDivIdx: 6, // 1.0 ms
+  timeDivs: [0.05e-3, 0.1e-3, 0.2e-3, 0.5e-3, 1.0e-3, 2.0e-3, 5.0e-3, 10.0e-3, 20.0e-3, 50.0e-3],
+  timeLabels: ["50µs", "100µs", "200µs", "500µs", "1.0ms", "2.0ms", "5.0ms", "10ms", "20ms", "50ms"],
+  hPos: 0.0,
+
+  // Channel 1
+  ch1VoltsIdx: 3, // 1.0 V
+  voltsDivs: [0.1, 0.2, 0.5, 1.0, 2.0, 5.0],
+  voltsLabels: ["100mV", "200mV", "500mV", "1.0V", "2.0V", "5.0V"],
+  ch1Pos: 0.0,
+  ch1Coupling: 'DC',
+  ch1Signal: 'sine',
+
+  // Channel 2
+  ch2VoltsIdx: 3,
+  ch2Pos: 0.0,
+  ch2Coupling: 'DC',
+  ch2Signal: 'cosine',
+
+  // Triggering
+  trigMode: 'AUTO', // AUTO, NORM, SINGLE
+  trigSlope: 1, // +1 = Rising, -1 = Falling
+  trigLevel: 0.0,
+  holdOff: 0.0,
+  isTriggered: false,
+
+  // Display System
+  displayMode: 'YT', // YT or XY
+  intensity: 0.8,
+  persistence: 0.4
 };
 
-const state = Object.assign({}, defaults);
-
 /* =========================================================
-   CANVAS SETUP
+   CANVAS & CRT GRAPHICS SYSTEM
    ========================================================= */
-const screenFrame = document.querySelector('.screen-frame');
-const canvas = document.getElementById('scope');
+const canvas = document.getElementById('scopeCanvas');
 const ctx = canvas.getContext('2d');
-
 const traceCanvas = document.createElement('canvas');
 const traceCtx = traceCanvas.getContext('2d');
 
-let cssW = 0, cssH = 0, dpr = 1;
+let dpr = 1, width = 0, height = 0;
+const GRID_COLS = 10;
+const GRID_ROWS = 8;
 
-function resizeCanvas(){
-  const rect = screenFrame.getBoundingClientRect();
-  dpr = Math.min(window.devicePixelRatio || 1, 2.5);
-  cssW = Math.max(1, Math.round(rect.width));
-  cssH = Math.max(1, Math.round(rect.height));
+function resizeScope(){
+  const rect = canvas.getBoundingClientRect();
+  dpr = Math.min(window.devicePixelRatio || 1, 2);
+  width = rect.width;
+  height = rect.height;
 
-  canvas.width = Math.round(cssW * dpr);
-  canvas.height = Math.round(cssH * dpr);
+  canvas.width = Math.round(width * dpr);
+  canvas.height = Math.round(height * dpr);
   ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
 
-  traceCanvas.width = Math.round(cssW * dpr);
-  traceCanvas.height = Math.round(cssH * dpr);
+  traceCanvas.width = Math.round(width * dpr);
+  traceCanvas.height = Math.round(height * dpr);
   traceCtx.setTransform(dpr, 0, 0, dpr, 0, 0);
 }
 
-window.addEventListener('resize', resizeCanvas);
-resizeCanvas();
+window.addEventListener('resize', resizeScope);
+resizeScope();
 
 /* =========================================================
-   CRT GRID
+   SIGNAL GENERATORS & HARDWARE CIRCUIT EMULATION
    ========================================================= */
-function drawGrid(){
-  const w = cssW, h = cssH;
-  ctx.fillStyle = '#04140c';
-  ctx.fillRect(0, 0, w, h);
+function generateRawSignal(type, t){
+  const f = 1000.0; // 1kHz fundamental standard test wave
+  switch(type){
+    case 'sine':
+      return 2.5 * Math.sin(2 * Math.PI * f * t);
+    case 'square':
+      return 2.5 * (Math.sin(2 * Math.PI * f * t) >= 0 ? 1 : -1);
+    case 'triangle':
+      return 2.5 * (2 / Math.PI) * Math.asin(Math.sin(2 * Math.PI * f * t));
+    case 'cosine':
+      return 2.5 * Math.cos(2 * Math.PI * f * t);
+    case 'sawtooth':
+      return 2.5 * (2 * ((400 * t) % 1) - 1);
+    case 'cal':
+      return ((t * 1000) % 1 > 0.5) ? 5.0 : 0.0;
+    case 'noise':
+      return (Math.random() - 0.5) * 2.0;
+    case 'lissajousX':
+      return 2.5 * Math.sin(2 * Math.PI * 500 * t);
+    case 'lissajousY':
+      return 2.5 * Math.sin(2 * Math.PI * 1000 * t + Math.PI/4);
+    default:
+      return 0.0;
+  }
+}
 
-  const cols = 10, rows = 8;
-  const cw = w / cols, ch = h / rows;
+// Simulated Hardware Coupling (DC vs AC vs GND)
+function processCoupling(val, coupling){
+  if(coupling === 'GND') return 0.0;
+  if(coupling === 'AC') return val - 0.5; // Strip DC Offset component
+  return val; // DC Coupling
+}
+
+/* =========================================================
+   REAL-TIME HARDWARE TRIGGER ENGINE
+   ========================================================= */
+function findTriggerIndex(buffer, level, slope){
+  for(let i = 1; i < buffer.length - 1; i++){
+    const prev = buffer[i - 1];
+    const curr = buffer[i];
+    if(slope > 0){
+      if(prev < level && curr >= level) return i;
+    } else {
+      if(prev > level && curr <= level) return i;
+    }
+  }
+  return -1;
+}
+
+/* =========================================================
+   CRT RENDERING SYSTEM (RETICULE & PHOSPHOR GLOW)
+   ========================================================= */
+function drawReticle(){
+  ctx.fillStyle = '#030d07';
+  ctx.fillRect(0, 0, width, height);
+
+  const cw = width / GRID_COLS;
+  const ch = height / GRID_ROWS;
 
   ctx.lineWidth = 1;
-  ctx.strokeStyle = 'rgba(70,180,120,0.16)';
+  ctx.strokeStyle = 'rgba(40, 100, 65, 0.35)';
+
   ctx.beginPath();
-  for(let i = 1; i < cols; i++){
+  for(let i = 1; i < GRID_COLS; i++){
     const x = Math.round(i * cw) + 0.5;
-    ctx.moveTo(x, 0); ctx.lineTo(x, h);
+    ctx.moveTo(x, 0); ctx.lineTo(x, height);
   }
-  for(let j = 1; j < rows; j++){
+  for(let j = 1; j < GRID_ROWS; j++){
     const y = Math.round(j * ch) + 0.5;
-    ctx.moveTo(0, y); ctx.lineTo(w, y);
+    ctx.moveTo(0, y); ctx.lineTo(width, y);
   }
   ctx.stroke();
 
-  ctx.strokeStyle = 'rgba(90,220,150,0.32)';
+  // Major Center Axis Reticle Subdivisions
+  ctx.strokeStyle = 'rgba(70, 160, 100, 0.6)';
+  const midX = Math.round(width / 2) + 0.5;
+  const midY = Math.round(height / 2) + 0.5;
+
   ctx.beginPath();
-  const midX = Math.round(w / 2) + 0.5;
-  const midY = Math.round(h / 2) + 0.5;
-  ctx.moveTo(midX, 0); ctx.lineTo(midX, h);
-  ctx.moveTo(0, midY); ctx.lineTo(w, midY);
+  ctx.moveTo(midX, 0); ctx.lineTo(midX, height);
+  ctx.moveTo(0, midY); ctx.lineTo(width, midY);
   ctx.stroke();
 
-  ctx.strokeStyle = 'rgba(90,220,150,0.28)';
+  // Sub-ticks along central axes
   ctx.beginPath();
-  const tick = 4;
-  for(let i = 0; i <= cols * 5; i++){
-    const x = i * (w / (cols * 5));
-    ctx.moveTo(x, midY - tick); ctx.lineTo(x, midY + tick);
+  const subTicksX = GRID_COLS * 5;
+  const subTicksY = GRID_ROWS * 5;
+  for(let i = 0; i <= subTicksX; i++){
+    const x = i * (width / subTicksX);
+    ctx.moveTo(x, midY - 3); ctx.lineTo(x, midY + 3);
   }
-  for(let j = 0; j <= rows * 5; j++){
-    const y = j * (h / (rows * 5));
-    ctx.moveTo(midX - tick, y); ctx.lineTo(midX + tick, y);
+  for(let j = 0; j <= subTicksY; j++){
+    const y = j * (height / subTicksY);
+    ctx.moveTo(midX - 3, y); ctx.lineTo(midX + 3, y);
   }
   ctx.stroke();
-
-  ctx.strokeStyle = 'rgba(90,220,150,0.35)';
-  ctx.lineWidth = 1;
-  ctx.strokeRect(.5, .5, w - 1, h - 1);
 }
 
 /* =========================================================
-   EXACT 2D WAVEFORMS & SHAPES
+   MAIN SCOPE EXECUTION LOOP
    ========================================================= */
-const Wave = {
-  sine: a => Math.sin(a),
-  square: a => Math.sin(a) >= 0 ? 1 : -1,
-  triangle: a => (2 / Math.PI) * Math.asin(Math.sin(a)),
-  sawtooth: a => 2 * (a / (2 * Math.PI) - Math.floor(0.5 + a / (2 * Math.PI)))
-};
+let sampleTime = 0;
 
-function pointOnPolygon(t, verts){
-  const n = verts.length;
-  let p = ((t * n) % n + n) % n;
-  const seg = Math.floor(p);
-  const f = p - seg;
-  const a = verts[seg];
-  const b = verts[(seg + 1) % n];
-  return {
-    x: a[0] + (b[0] - a[0]) * f,
-    y: a[1] + (b[1] - a[1]) * f
-  };
-}
+function renderScope(){
+  requestAnimationFrame(renderScope);
 
-function regularPolygon(n){
-  const v = [];
-  for(let i = 0; i < n; i++){
-    const ang = -Math.PI / 2 + (i * 2 * Math.PI) / n;
-    v.push([Math.cos(ang), Math.sin(ang)]);
-  }
-  return v;
-}
+  sampleTime += 0.00005; // Simulation Clock
 
-const PHI = (1 + Math.sqrt(5)) / 2;
-const STAR_INNER_RATIO = 1 / (PHI * PHI);
+  // CRT Phosphor Persistence Simulation
+  const fade = Math.max(0.05, 1.0 - ScopeState.persistence);
+  traceCtx.fillStyle = `rgba(3, 13, 7, ${fade})`;
+  traceCtx.fillRect(0, 0, width, height);
 
-const ShapeVerts = {
-  square: [[-1, -1], [1, -1], [1, 1], [-1, 1]],
-  triangle: regularPolygon(3),
-  pentagon: regularPolygon(5),
-  star: (() => {
-    const v = [];
-    for(let i = 0; i < 10; i++){
-      const r = i % 2 === 0 ? 1 : STAR_INNER_RATIO;
-      const ang = -Math.PI / 2 + (i * Math.PI) / 5;
-      v.push([r * Math.cos(ang), r * Math.sin(ang)]);
-    }
-    return v;
-  })()
-};
+  const timeDiv = ScopeState.timeDivs[ScopeState.timeDivIdx];
+  const totalTimeWindow = timeDiv * GRID_COLS;
+  const numSamples = 600;
+  const dt = totalTimeWindow / numSamples;
 
-const ShapeFns = {
-  circle: t => {
-    const a = t * 2 * Math.PI;
-    return { x: Math.cos(a), y: Math.sin(a) };
-  },
-  square: t => pointOnPolygon(t, ShapeVerts.square),
-  triangle: t => pointOnPolygon(t, ShapeVerts.triangle),
-  pentagon: t => pointOnPolygon(t, ShapeVerts.pentagon),
-  star: t => pointOnPolygon(t, ShapeVerts.star),
-  heart: t => {
-    const a = t * 2 * Math.PI;
-    const x = 16 * Math.pow(Math.sin(a), 3);
-    const y = 13 * Math.cos(a) - 5 * Math.cos(2 * a) - 2 * Math.cos(3 * a) - Math.cos(4 * a);
-    return { x: x / 16, y: -(y + 2.53837) / 16 };
-  }
-};
+  // Sample Audio/Signal Buffers
+  const ch1Buffer = new Float32Array(numSamples);
+  const ch2Buffer = new Float32Array(numSamples);
 
-/* =========================================================
-   100% ACCURATE 3D GEOMETRY & PROJECTION
-   ========================================================= */
-function buildExtrudedShape(shapeKey){
-  const n = shapeKey === 'square' ? 4 :
-            shapeKey === 'triangle' ? 3 :
-            shapeKey === 'pentagon' ? 5 : 10;
-  const depth = 0.5;
-  const front = [], back = [];
-  const fn = ShapeFns[shapeKey];
+  const timeOffset = ScopeState.hPos * timeDiv;
 
-  for(let i = 0; i < n; i++){
-    const t = i / n;
-    const p = fn(t);
-    front.push([p.x, p.y, depth]);
-    back.push([p.x, p.y, -depth]);
+  for(let i = 0; i < numSamples; i++){
+    const t = sampleTime + i * dt + timeOffset;
+    ch1Buffer[i] = processCoupling(generateRawSignal(ScopeState.ch1Signal, t), ScopeState.ch1Coupling);
+    ch2Buffer[i] = processCoupling(generateRawSignal(ScopeState.ch2Signal, t), ScopeState.ch2Coupling);
   }
 
-  const strokes = [
-    front.concat([front[0]]),
-    back.concat([back[0]])
-  ];
+  // Evaluate Hardware Trigger Engine
+  let trigOffsetIndex = findTriggerIndex(ch1Buffer, ScopeState.trigLevel, ScopeState.trigSlope);
 
-  for(let i = 0; i < n; i++){
-    strokes.push([front[i], back[i]]);
-  }
-  return strokes;
-}
+  const trigLed = document.getElementById('trigLed');
+  const trigStatus = document.getElementById('trigStatus');
 
-function buildSphere(){
-  const strokes = [];
-  const rings = 8, segs = 24;
-  for(let i = 1; i < rings; i++){
-    const phi = -Math.PI / 2 + (i * Math.PI) / rings;
-    const ring = [];
-    for(let j = 0; j <= segs; j++){
-      const theta = (j * 2 * Math.PI) / segs;
-      ring.push([
-        Math.cos(phi) * Math.cos(theta),
-        Math.sin(phi),
-        Math.cos(phi) * Math.sin(theta)
-      ]);
-    }
-    strokes.push(ring);
-  }
-  const meridians = 8;
-  for(let j = 0; j < meridians; j++){
-    const theta = (j * 2 * Math.PI) / meridians;
-    const merid = [];
-    for(let i = 0; i <= segs; i++){
-      const phi = -Math.PI / 2 + (i * Math.PI) / segs;
-      merid.push([
-        Math.cos(phi) * Math.cos(theta),
-        Math.sin(phi),
-        Math.cos(phi) * Math.sin(theta)
-      ]);
-    }
-    strokes.push(merid);
-  }
-  return strokes;
-}
-
-function build3DHeart(){
-  const strokes = [];
-  const numRings = 12, segs = 36;
-  for(let i = 0; i <= numRings; i++){
-    const u = (i / numRings) * Math.PI;
-    const ring = [];
-    for(let j = 0; j <= segs; j++){
-      const v = (j / segs) * 2 * Math.PI;
-      const x = 16 * Math.pow(Math.sin(v), 3) * Math.sin(u);
-      const y = (13 * Math.cos(v) - 5 * Math.cos(2*v) - 2 * Math.cos(3*v) - Math.cos(4*v)) * Math.sin(u);
-      const z = 6 * Math.cos(u);
-      ring.push([x / 16, -(y + 2.53837) / 16, z / 16]);
-    }
-    strokes.push(ring);
-  }
-  return strokes;
-}
-
-const Shape3DCache = {};
-function get3DGeometry(shapeKey){
-  if(Shape3DCache[shapeKey]) return Shape3DCache[shapeKey];
-  let geom;
-  if(shapeKey === 'circle') geom = buildSphere();
-  else if(shapeKey === 'heart') geom = build3DHeart();
-  else geom = buildExtrudedShape(shapeKey);
-
-  Shape3DCache[shapeKey] = geom;
-  return geom;
-}
-
-/* Precise Euler XYZ Matrix Rotation & Perspective Projection */
-function project3D(pt, rxDeg, ryDeg, rzDeg){
-  const rx = rxDeg * Math.PI / 180;
-  const ry = ryDeg * Math.PI / 180;
-  const rz = rzDeg * Math.PI / 180;
-
-  const cx = Math.cos(rx), sx = Math.sin(rx);
-  const cy = Math.cos(ry), sy = Math.sin(ry);
-  const cz = Math.cos(rz), sz = Math.sin(rz);
-
-  let x = pt[0], y = pt[1], z = pt[2];
-
-  // Rotate X
-  let y1 = y * cx - z * sx;
-  let z1 = y * sx + z * cx;
-  let x1 = x;
-
-  // Rotate Y
-  let x2 = x1 * cy + z1 * sy;
-  let z2 = -x1 * sy + z1 * cy;
-  let y2 = y1;
-
-  // Rotate Z
-  let x3 = x2 * cz - y2 * sz;
-  let y3 = x2 * sz + y2 * cz;
-  let z3 = z2;
-
-  // Perspective Projection: Camera at Distance d = 3.5
-  const d = 3.5;
-  const scale = d / (d + z3);
-
-  return {
-    x: x3 * scale,
-    y: y3 * scale
-  };
-}
-
-/* =========================================================
-   AUDIO & WORKLET SYSTEM
-   ========================================================= */
-const audioEl = document.getElementById('audioPlayer');
-let audioCtx = null, analyser = null, sourceNode = null;
-let audioReady = false, audioDataArray = null, userSeeking = false;
-let shapeAudioNode = null;
-
-function ensureAudioGraph(){
-  if(audioReady) return;
-  audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-  sourceNode = audioCtx.createMediaElementSource(audioEl);
-  analyser = audioCtx.createAnalyser();
-  analyser.fftSize = 2048;
-  analyser.smoothingTimeConstant = 0.08;
-
-  sourceNode.connect(analyser);
-  analyser.connect(audioCtx.destination);
-
-  audioDataArray = new Uint8Array(analyser.fftSize);
-  audioReady = true;
-}
-
-async function startShapeAudio(){
-  ensureAudioGraph();
-  if(audioCtx.state === 'suspended') await audioCtx.resume();
-  if(shapeAudioNode){ shapeAudioNode.disconnect(); shapeAudioNode = null; }
-
-  const workletCode = `
-    class ShapeAudioProcessor extends AudioWorkletProcessor {
-      constructor(){
-        super();
-        this.phase = 0;
-        this.params = { frequency: 120, amplitude: 0.3, shapeType: 'circle', scale: 1, posX: 0, posY: 0, rotation: 0, phaseOffset: 0 };
-        this.port.onmessage = e => Object.assign(this.params, e.data);
-      }
-      process(inputs, outputs){
-        const output = outputs[0];
-        if(!output || output.length < 2) return true;
-        const left = output[0], right = output[1], numSamples = left.length;
-        const p = this.params;
-        const phaseInc = p.frequency / sampleRate;
-
-        for(let i = 0; i < numSamples; i++){
-          this.phase = (this.phase + phaseInc) % 1.0;
-          let a = this.phase * 2 * Math.PI;
-          let x = Math.cos(a) * p.scale;
-          let y = Math.sin(a) * p.scale;
-          left[i] = Math.max(-1, Math.min(1, (x + p.posX) * p.amplitude));
-          right[i] = Math.max(-1, Math.min(1, (y + p.posY) * p.amplitude));
-        }
-        return true;
-      }
-    }
-    registerProcessor('shape-audio-processor', ShapeAudioProcessor);
-  `;
-  const blob = new Blob([workletCode], { type: 'application/javascript' });
-  const url = URL.createObjectURL(blob);
-
-  try {
-    await audioCtx.audioWorklet.addModule(url);
-    shapeAudioNode = new AudioWorkletNode(audioCtx, 'shape-audio-processor', { outputChannelCount: [2] });
-    shapeAudioNode.connect(analyser);
-    updateShapeAudioParams();
-    document.getElementById('btnShapeAudio').classList.add('primary');
-  } catch(e) { console.error(e); }
-}
-
-function stopShapeAudio(){
-  if(shapeAudioNode){ shapeAudioNode.disconnect(); shapeAudioNode = null; }
-}
-
-function updateShapeAudioParams(){
-  if(shapeAudioNode && shapeAudioNode.port){
-    shapeAudioNode.port.postMessage({
-      frequency: state.frequency, amplitude: state.amplitude, shapeType: state.shapeType,
-      scale: state.scale, posX: state.posX, posY: state.posY, rotation: state.rotation, phaseOffset: state.phase
-    });
-  }
-}
-
-/* =========================================================
-   UI CONTROLS & BINDINGS
-   ========================================================= */
-const el = id => document.getElementById(id);
-const readoutMode = el('readoutMode'), readoutSrc = el('readoutSrc'), readoutFps = el('readoutFps');
-const chanLabel = el('chanLabel');
-
-function updateReadouts(){
-  readoutMode.innerHTML = `MODE: <b>${state.mode.toUpperCase()}</b>`;
-  if(state.mode === 'waveform'){
-    readoutSrc.innerHTML = `SRC: <b>${state.waveformType.toUpperCase()}</b>`;
-    chanLabel.textContent = 'CH1: TIME  CH2: Y';
-  } else if(state.mode === 'shape'){
-    readoutSrc.innerHTML = `SRC: <b>${state.shapeType.toUpperCase()} · ${state.is3D ? '3D' : '2D'}</b>`;
-    chanLabel.textContent = 'CH1: X  CH2: Y';
+  if(trigOffsetIndex !== -1){
+    ScopeState.isTriggered = true;
+    trigLed.className = 'led green';
+    trigStatus.textContent = "TRIG'D";
   } else {
-    readoutSrc.innerHTML = `SRC: <b>AUDIO (${state.audioDimension.toUpperCase()})</b>`;
-    chanLabel.textContent = state.audioDimension === '2d' ? 'CH1: L  CH2: R' : 'CH1: SIGNAL';
-  }
-}
-
-function bindSlider(id, key, opts = {}){
-  const input = el(id), label = el('v-' + id);
-  function refresh(){
-    const v = parseFloat(input.value);
-    state[key !== undefined ? key : id] = v;
-    if(label) label.textContent = opts.fmt ? opts.fmt(v) : v.toFixed(2);
-    updateShapeAudioParams();
-  }
-  input.addEventListener('input', refresh);
-  refresh();
-}
-
-bindSlider('posX', 'posX', {fmt: v => v.toFixed(2)});
-bindSlider('posY', 'posY', {fmt: v => v.toFixed(2)});
-bindSlider('scale', 'scale', {fmt: v => v.toFixed(2)});
-bindSlider('rotation', 'rotation', {fmt: v => Math.round(v) + '°'});
-bindSlider('rotX', 'rotX', {fmt: v => Math.round(v) + '°'});
-bindSlider('rotY', 'rotY', {fmt: v => Math.round(v) + '°'});
-bindSlider('rotZ', 'rotZ', {fmt: v => Math.round(v) + '°'});
-bindSlider('frequency', 'frequency', {fmt: v => v.toFixed(1) + ' Hz'});
-bindSlider('amplitude', 'amplitude', {fmt: v => v.toFixed(2)});
-bindSlider('phase', 'phase', {fmt: v => Math.round(v) + '°'});
-bindSlider('speed', 'speed', {fmt: v => v.toFixed(2)});
-bindSlider('zoom', 'zoom', {fmt: v => v.toFixed(2) + '×'});
-bindSlider('persistence', 'persistence', {fmt: v => Math.round(v)});
-bindSlider('brightness', 'brightness', {fmt: v => Math.round(v)});
-bindSlider('volume', 'volume', {fmt: v => Math.round(v) + '%'});
-
-el('volume').addEventListener('input', () => { audioEl.volume = state.volume / 100; });
-audioEl.volume = state.volume / 100;
-
-el('waveformType').addEventListener('change', e => { state.waveformType = e.target.value; updateReadouts(); });
-el('shapeType').addEventListener('change', e => { state.shapeType = e.target.value; updateReadouts(); updateShapeAudioParams(); });
-
-const modeTabs = document.querySelectorAll('.mode-tab');
-modeTabs.forEach(tab => {
-  tab.addEventListener('click', () => {
-    modeTabs.forEach(t => t.classList.remove('active'));
-    tab.classList.add('active');
-    state.mode = tab.getAttribute('data-mode');
-    el('sec-waveform').classList.toggle('hidden', state.mode !== 'waveform');
-    el('sec-shape').classList.toggle('hidden', state.mode !== 'shape');
-    el('sec-audio').classList.toggle('hidden', state.mode !== 'audio');
-    updateReadouts();
-  });
-});
-
-const dimBtns = document.querySelectorAll('[data-dim]');
-dimBtns.forEach(btn => {
-  btn.addEventListener('click', () => {
-    dimBtns.forEach(b => b.classList.remove('active'));
-    btn.classList.add('active');
-    state.is3D = (btn.getAttribute('data-dim') === '3d');
-    el('field-rotation2d').classList.toggle('hidden', state.is3D);
-    el('field-rotX').classList.toggle('hidden', !state.is3D);
-    el('field-rotY').classList.toggle('hidden', !state.is3D);
-    el('field-rotZ').classList.toggle('hidden', !state.is3D);
-    updateReadouts();
-    updateShapeAudioParams();
-  });
-});
-
-const audioDimBtns = document.querySelectorAll('[data-audiodim]');
-audioDimBtns.forEach(btn => {
-  btn.addEventListener('click', () => {
-    audioDimBtns.forEach(b => b.classList.remove('active'));
-    btn.classList.add('active');
-    state.audioDimension = btn.getAttribute('data-audiodim');
-    updateReadouts();
-  });
-});
-
-el('btnShapeAudio').addEventListener('click', () => startShapeAudio());
-el('btnShapeStop').addEventListener('click', () => stopShapeAudio());
-el('btnPlay').addEventListener('click', () => { ensureAudioGraph(); audioCtx.resume(); audioEl.play(); });
-el('btnPause').addEventListener('click', () => audioEl.pause());
-el('btnStop').addEventListener('click', () => { audioEl.pause(); audioEl.currentTime = 0; });
-
-const fileDrop = el('fileDrop'), audioFileInput = el('audioFile');
-fileDrop.addEventListener('click', () => audioFileInput.click());
-audioFileInput.addEventListener('change', e => {
-  const file = e.target.files[0];
-  if(file){
-    fileDrop.textContent = file.name;
-    fileDrop.classList.add('has-file');
-    audioEl.src = URL.createObjectURL(file);
-  }
-});
-
-audioEl.addEventListener('timeupdate', () => {
-  if(!userSeeking && audioEl.duration){
-    el('seek').value = (audioEl.currentTime / audioEl.duration) * 100;
-    el('v-seek').textContent = `${fmtTime(audioEl.currentTime)} / ${fmtTime(audioEl.duration)}`;
-  }
-});
-el('seek').addEventListener('input', () => { userSeeking = true; });
-el('seek').addEventListener('change', () => {
-  if(audioEl.duration) audioEl.currentTime = (parseFloat(el('seek').value) / 100) * audioEl.duration;
-  userSeeking = false;
-});
-
-function fmtTime(sec){
-  if(!isFinite(sec) || sec < 0) sec = 0;
-  const m = Math.floor(sec / 60), s = Math.floor(sec % 60);
-  return `${m}:${s < 10 ? '0' : ''}${s}`;
-}
-
-el('btnReset').addEventListener('click', () => {
-  Object.assign(state, defaults);
-  document.querySelectorAll('input[type=range]').forEach(input => {
-    if(defaults[input.id] !== undefined){
-      input.value = defaults[input.id];
-      input.dispatchEvent(new Event('input'));
+    ScopeState.isTriggered = false;
+    if(ScopeState.trigMode === 'NORM'){
+      trigLed.className = 'led red';
+      trigStatus.textContent = 'WAIT';
+    } else {
+      trigLed.className = 'led green';
+      trigStatus.textContent = 'AUTO';
+      trigOffsetIndex = 0; // Fallback Auto Sweep
     }
-  });
-  el('waveformType').value = defaults.waveformType;
-  el('shapeType').value = defaults.shapeType;
-  modeTabs[1].click(); dimBtns[0].click(); audioDimBtns[0].click();
-  stopShapeAudio(); updateReadouts();
-});
+  }
+
+  // Draw Signals if Trigger condition allows frame sweep
+  if(ScopeState.trigMode !== 'NORM' || ScopeState.isTriggered){
+    const voltDiv1 = ScopeState.voltsDivs[ScopeState.ch1VoltsIdx];
+    const voltDiv2 = ScopeState.voltsDivs[ScopeState.ch2VoltsIdx];
+
+    const pixelsPerDivY = height / GRID_ROWS;
+    const pixelsPerDivX = width / GRID_COLS;
+
+    const centerY = height / 2;
+    const centerX = width / 2;
+
+    traceCtx.lineWidth = 2.0;
+    const alpha = ScopeState.intensity;
+
+    if(ScopeState.displayMode === 'YT'){
+      // DRAW CHANNEL 1 (YELLOW)
+      traceCtx.strokeStyle = `rgba(255, 204, 0, ${alpha})`;
+      traceCtx.shadowColor = 'rgba(255, 204, 0, 0.6)';
+      traceCtx.shadowBlur = 6 * alpha;
+
+      traceCtx.beginPath();
+      for(let i = 0; i < numSamples - trigOffsetIndex; i++){
+        const sampleIdx = i + trigOffsetIndex;
+        const x = (i / (numSamples - 1)) * width;
+        const v = ch1Buffer[sampleIdx];
+        const y = centerY - ((v / voltDiv1) + ScopeState.ch1Pos) * pixelsPerDivY;
+        if(i === 0) traceCtx.moveTo(x, y); else traceCtx.lineTo(x, y);
+      }
+      traceCtx.stroke();
+
+      // DRAW CHANNEL 2 (CYAN)
+      traceCtx.strokeStyle = `rgba(0, 204, 255, ${alpha})`;
+      traceCtx.shadowColor = 'rgba(0, 204, 255, 0.6)';
+      traceCtx.shadowBlur = 6 * alpha;
+
+      traceCtx.beginPath();
+      for(let i = 0; i < numSamples - trigOffsetIndex; i++){
+        const sampleIdx = i + trigOffsetIndex;
+        const x = (i / (numSamples - 1)) * width;
+        const v = ch2Buffer[sampleIdx];
+        const y = centerY - ((v / voltDiv2) + ScopeState.ch2Pos) * pixelsPerDivY;
+        if(i === 0) traceCtx.moveTo(x, y); else traceCtx.lineTo(x, y);
+      }
+      traceCtx.stroke();
+    } else {
+      // X-Y VECTOR / LISSAJOUS DISPLAY MODE (PHOSPHOR GREEN)
+      traceCtx.strokeStyle = `rgba(51, 255, 119, ${alpha})`;
+      traceCtx.shadowColor = 'rgba(51, 255, 119, 0.8)';
+      traceCtx.shadowBlur = 8 * alpha;
+
+      traceCtx.beginPath();
+      for(let i = 0; i < numSamples; i++){
+        const vx = ch1Buffer[i];
+        const vy = ch2Buffer[i];
+        const x = centerX + ((vx / voltDiv1) + ScopeState.hPos) * pixelsPerDivX;
+        const y = centerY - ((vy / voltDiv2) + ScopeState.ch1Pos) * pixelsPerDivY;
+        if(i === 0) traceCtx.moveTo(x, y); else traceCtx.lineTo(x, y);
+      }
+      traceCtx.stroke();
+    }
+  }
+
+  // Composite CRT Trace on Reticle Background
+  drawReticle();
+  ctx.drawImage(traceCanvas, 0, 0, width, height);
+}
 
 /* =========================================================
-   RENDER ENGINE
+   INTERACTIVE ROTARY KNOB CONTROLLER HARDWARE BINDINGS
    ========================================================= */
-let lastTime = performance.now();
-let frameCount = 0, lastFpsTime = performance.now();
-let animPhase = 0, autoRotY = 0;
+function setupKnob(id, onRotate){
+  const el = document.getElementById(id);
+  let startY = 0;
+  let currentRotation = 0;
 
-function render(now){
-  requestAnimationFrame(render);
-  const dt = (now - lastTime) / 1000;
-  lastTime = now;
-
-  frameCount++;
-  if(now - lastFpsTime >= 500){
-    readoutFps.innerHTML = `FPS: <b>${Math.round((frameCount * 1000) / (now - lastFpsTime))}</b>`;
-    frameCount = 0; lastFpsTime = now;
+  function onPointerMove(e){
+    const deltaY = startY - e.clientY;
+    currentRotation += deltaY * 2;
+    el.style.transform = `rotate(${currentRotation}deg)`;
+    startY = e.clientY;
+    onRotate(deltaY);
   }
 
-  animPhase += dt * state.speed * state.frequency;
-  // Slow continuous rotation computation (~15 deg/sec at 1.0 multiplier)
-  autoRotY += dt * state.speed * 45;
-
-  const fadeAlpha = Math.max(0.02, 1.0 - (state.persistence / 100));
-  traceCtx.fillStyle = `rgba(4, 20, 12, ${fadeAlpha})`;
-  traceCtx.fillRect(0, 0, cssW, cssH);
-
-  traceCtx.lineWidth = 1.8;
-  const br = state.brightness / 100;
-  traceCtx.strokeStyle = `rgba(77, 255, 160, ${br})`;
-  traceCtx.shadowColor = 'rgba(77, 255, 160, 0.8)';
-  traceCtx.shadowBlur = 6 * br;
-
-  const centerX = cssW / 2 + state.posX * (cssW / 2);
-  const centerY = cssH / 2 - state.posY * (cssH / 2);
-  const baseRadius = (Math.min(cssW, cssH) * 0.35 * state.scale) / state.zoom;
-
-  traceCtx.beginPath();
-
-  if(state.mode === 'waveform'){
-    const samples = 300, waveFn = Wave[state.waveformType];
-    const pRad = state.phase * Math.PI / 180;
-    for(let i = 0; i < samples; i++){
-      const t = i / samples, x = t * cssW;
-      const angle = t * Math.PI * 4 * state.zoom + animPhase + pRad;
-      const y = centerY - waveFn(angle) * baseRadius * state.amplitude;
-      if(i === 0) traceCtx.moveTo(x, y); else traceCtx.lineTo(x, y);
-    }
-  } 
-  else if(state.mode === 'shape'){
-    const pRad = state.phase * Math.PI / 180;
-    if(!state.is3D){
-      const fn = ShapeFns[state.shapeType], samples = 200;
-      const rotRad = state.rotation * Math.PI / 180;
-      for(let i = 0; i <= samples; i++){
-        const pt = fn(i / samples);
-        let x = pt.x * baseRadius * state.amplitude;
-        let y = pt.y * baseRadius * state.amplitude;
-        if(rotRad !== 0){
-          const rx = x * Math.cos(rotRad) - y * Math.sin(rotRad);
-          const ry = x * Math.sin(rotRad) + y * Math.cos(rotRad);
-          x = rx; y = ry;
-        }
-        if(pRad !== 0){
-          const px = x * Math.cos(pRad) - y * Math.sin(pRad);
-          const py = x * Math.sin(pRad) + y * Math.cos(pRad);
-          x = px; y = py;
-        }
-        const canvasX = centerX + x, canvasY = centerY - y;
-        if(i === 0) traceCtx.moveTo(canvasX, canvasY); else traceCtx.lineTo(canvasX, canvasY);
-      }
-    } else {
-      const geometry = get3DGeometry(state.shapeType);
-      const currRotX = state.rotX;
-      const currRotY = state.rotY + autoRotY; // Smooth, slow automatic Y-spin
-      const currRotZ = state.rotZ;
-
-      geometry.forEach(stroke => {
-        for(let i = 0; i < stroke.length; i++){
-          const proj = project3D(stroke[i], currRotX, currRotY, currRotZ);
-          let x = proj.x * baseRadius * state.amplitude;
-          let y = proj.y * baseRadius * state.amplitude;
-
-          if(pRad !== 0){
-            const px = x * Math.cos(pRad) - y * Math.sin(pRad);
-            const py = x * Math.sin(pRad) + y * Math.cos(pRad);
-            x = px; y = py;
-          }
-
-          const canvasX = centerX + x, canvasY = centerY - y;
-          if(i === 0) traceCtx.moveTo(canvasX, canvasY); else traceCtx.lineTo(canvasX, canvasY);
-        }
-      });
-    }
-  } 
-  else if(state.mode === 'audio' && analyser && audioDataArray){
-    analyser.getByteTimeDomainData(audioDataArray);
-    const len = audioDataArray.length;
-    if(state.audioDimension === '1d'){
-      for(let i = 0; i < len; i++){
-        const v = (audioDataArray[i] - 128) / 128.0;
-        const x = (i / len) * cssW;
-        const y = centerY - v * baseRadius * state.amplitude * 2;
-        if(i === 0) traceCtx.moveTo(x, y); else traceCtx.lineTo(x, y);
-      }
-    } else {
-      const half = Math.floor(len / 2);
-      for(let i = 0; i < half; i++){
-        const vx = (audioDataArray[i] - 128) / 128.0;
-        const vy = (audioDataArray[i + half] - 128) / 128.0;
-        const x = centerX + vx * baseRadius * state.amplitude * 2;
-        const y = centerY - vy * baseRadius * state.amplitude * 2;
-        if(i === 0) traceCtx.moveTo(x, y); else traceCtx.lineTo(x, y);
-      }
-    }
+  function onPointerUp(){
+    window.removeEventListener('pointermove', onPointerMove);
+    window.removeEventListener('pointerup', onPointerUp);
   }
 
-  traceCtx.stroke();
-  drawGrid();
-  ctx.drawImage(traceCanvas, 0, 0, cssW, cssH);
+  el.addEventListener('pointerdown', e => {
+    startY = e.clientY;
+    window.addEventListener('pointermove', onPointerMove);
+    window.addEventListener('pointerup', onPointerUp);
+  });
 }
 
-updateReadouts();
-requestAnimationFrame(render);
+// BIND HARDWARE CONTROLS
+setupKnob('knobTimeDiv', delta => {
+  if(delta > 0 && ScopeState.timeDivIdx < ScopeState.timeDivs.length - 1) ScopeState.timeDivIdx++;
+  if(delta < 0 && ScopeState.timeDivIdx > 0) ScopeState.timeDivIdx--;
+  document.getElementById('valTimeDiv').textContent = ScopeState.timeLabels[ScopeState.timeDivIdx];
+  document.getElementById('readoutTimeDiv').textContent = ScopeState.timeLabels[ScopeState.timeDivIdx];
+});
+
+setupKnob('knobHPos', delta => {
+  ScopeState.hPos += delta * 0.05;
+  document.getElementById('valHPos').textContent = ScopeState.hPos.toFixed(1);
+});
+
+setupKnob('knobCh1Volts', delta => {
+  if(delta > 0 && ScopeState.ch1VoltsIdx < ScopeState.voltsDivs.length - 1) ScopeState.ch1VoltsIdx++;
+  if(delta < 0 && ScopeState.ch1VoltsIdx > 0) ScopeState.ch1VoltsIdx--;
+  document.getElementById('valCh1Volts').textContent = ScopeState.voltsLabels[ScopeState.ch1VoltsIdx];
+});
+
+setupKnob('knobCh1Pos', delta => {
+  ScopeState.ch1Pos += delta * 0.05;
+  document.getElementById('valCh1Pos').textContent = ScopeState.ch1Pos.toFixed(1);
+});
+
+setupKnob('knobCh2Volts', delta => {
+  if(delta > 0 && ScopeState.ch2VoltsIdx < ScopeState.voltsDivs.length - 1) ScopeState.ch2VoltsIdx++;
+  if(delta < 0 && ScopeState.ch2VoltsIdx > 0) ScopeState.ch2VoltsIdx--;
+  document.getElementById('valCh2Volts').textContent = ScopeState.voltsLabels[ScopeState.ch2VoltsIdx];
+});
+
+setupKnob('knobCh2Pos', delta => {
+  ScopeState.ch2Pos += delta * 0.05;
+  document.getElementById('valCh2Pos').textContent = ScopeState.ch2Pos.toFixed(1);
+});
+
+setupKnob('knobTrigLevel', delta => {
+  ScopeState.trigLevel += delta * 0.05;
+  document.getElementById('valTrigLevel').textContent = ScopeState.trigLevel.toFixed(1) + 'V';
+});
+
+setupKnob('knobIntensity', delta => {
+  ScopeState.intensity = Math.max(0.1, Math.min(1.0, ScopeState.intensity + delta * 0.01));
+  document.getElementById('valIntensity').textContent = Math.round(ScopeState.intensity * 100) + '%';
+});
+
+setupKnob('knobPersistence', delta => {
+  ScopeState.persistence = Math.max(0.0, Math.min(0.95, ScopeState.persistence + delta * 0.01));
+  document.getElementById('valPersistence').textContent = Math.round(ScopeState.persistence * 100) + '%';
+});
+
+// COUPLING BUTTONS
+document.getElementById('btnCh1DC').addEventListener('click', () => { ScopeState.ch1Coupling = 'DC'; updateCouplingBtns(); });
+document.getElementById('btnCh1AC').addEventListener('click', () => { ScopeState.ch1Coupling = 'AC'; updateCouplingBtns(); });
+document.getElementById('btnCh1GND').addEventListener('click', () => { ScopeState.ch1Coupling = 'GND'; updateCouplingBtns(); });
+
+function updateCouplingBtns(){
+  document.getElementById('btnCh1DC').className = 'btn ' + (ScopeState.ch1Coupling === 'DC' ? 'active' : '');
+  document.getElementById('btnCh1AC').className = 'btn ' + (ScopeState.ch1Coupling === 'AC' ? 'active' : '');
+  document.getElementById('btnCh1GND').className = 'btn ' + (ScopeState.ch1Coupling === 'GND' ? 'active' : '');
+}
+
+// SIGNALS & DISPLAY MODES
+document.getElementById('selectCh1Signal').addEventListener('change', e => { ScopeState.ch1Signal = e.target.value; });
+document.getElementById('selectCh2Signal').addEventListener('change', e => { ScopeState.ch2Signal = e.target.value; });
+
+document.getElementById('btnModeYT').addEventListener('click', () => {
+  ScopeState.displayMode = 'YT';
+  document.getElementById('btnModeYT').className = 'btn active';
+  document.getElementById('btnModeXY').className = 'btn';
+  document.getElementById('readoutDisplayMode').textContent = 'YT (CH1+CH2)';
+});
+
+document.getElementById('btnModeXY').addEventListener('click', () => {
+  ScopeState.displayMode = 'XY';
+  document.getElementById('btnModeXY').className = 'btn active';
+  document.getElementById('btnModeYT').className = 'btn';
+  document.getElementById('readoutDisplayMode').textContent = 'X-Y VECTOR';
+});
+
+requestAnimationFrame(renderScope);
 })();
 </script>
 </body>
