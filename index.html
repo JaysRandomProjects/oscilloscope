@@ -147,6 +147,11 @@ canvas#scope{
   width:100%;
   height:100%;
   display:block;
+  image-rendering: optimizeSpeed;
+  image-rendering: -moz-crisp-edges;
+  image-rendering: -webkit-optimize-contrast;
+  image-rendering: pixelated;
+  image-rendering: crisp-edges;
 }
 
 /* CRT SCANLINES LAYER */
@@ -705,28 +710,37 @@ const defaults = {
 
 const state = Object.assign({}, defaults);
 
-/* CANVAS INITIALIZATION */
+/* CANVAS INITIALIZATION WITH DISABLED ANTIALIASING */
 const screenFrame = document.querySelector('.screen-frame');
 const canvas = document.getElementById('scope');
-const ctx = canvas.getContext('2d');
+const ctx = canvas.getContext('2d', { alpha: false });
+
+function applyCanvasAntialiasingSettings() {
+  ctx.imageSmoothingEnabled = false;
+  ctx.mozImageSmoothingEnabled = false;
+  ctx.webkitImageSmoothingEnabled = false;
+  ctx.msImageSmoothingEnabled = false;
+}
 
 let cssW = 0, cssH = 0, dpr = 1;
 
 function resizeCanvas(){
   const rect = screenFrame.getBoundingClientRect();
-  dpr = Math.min(window.devicePixelRatio || 1, 3);
+  dpr = 1; // Native 1:1 pixel rendering to guarantee raw crisp edges
   cssW = Math.max(1, Math.round(rect.width));
   cssH = Math.max(1, Math.round(rect.height));
 
-  canvas.width = Math.round(cssW * dpr);
-  canvas.height = Math.round(cssH * dpr);
-  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  canvas.width = cssW;
+  canvas.height = cssH;
+  ctx.setTransform(1, 0, 0, 1, 0, 0);
+  applyCanvasAntialiasingSettings();
 }
 window.addEventListener('resize', resizeCanvas);
 resizeCanvas();
 
 /* HD CRT DISPLAY & GRID */
 function applyDecayAndGrid(){
+  applyCanvasAntialiasingSettings();
   const w = cssW, h = cssH;
 
   // Simulated Phosphor Trail Decay Overlay
@@ -741,19 +755,19 @@ function applyDecayAndGrid(){
   ctx.strokeStyle = 'rgba(70,180,120,0.12)';
   ctx.beginPath();
   for(let i = 1; i < cols; i++){
-    const x = Math.round(i * cw) + 0.5;
+    const x = Math.floor(i * cw) + 0.5;
     ctx.moveTo(x, 0); ctx.lineTo(x, h);
   }
   for(let j = 1; j < rows; j++){
-    const y = Math.round(j * ch) + 0.5;
+    const y = Math.floor(j * ch) + 0.5;
     ctx.moveTo(0, y); ctx.lineTo(w, y);
   }
   ctx.stroke();
 
   ctx.strokeStyle = 'rgba(90,220,150,0.25)';
   ctx.beginPath();
-  const midX = Math.round(w / 2) + 0.5;
-  const midY = Math.round(h / 2) + 0.5;
+  const midX = Math.floor(w / 2) + 0.5;
+  const midY = Math.floor(h / 2) + 0.5;
   ctx.moveTo(midX, 0); ctx.lineTo(midX, h);
   ctx.moveTo(0, midY); ctx.lineTo(w, midY);
   ctx.stroke();
@@ -1186,158 +1200,199 @@ seekSlider.addEventListener('input', (e) => {
   }
 });
 
-/* RESET DEFAULTS */
 el('btnReset').addEventListener('click', () => {
   Object.assign(state, defaults);
-  el('posX').value = state.posX;
-  el('posY').value = state.posY;
-  el('scale').value = state.scale;
-  el('rotation').value = state.rotation;
-  el('rotX').value = state.rotX;
-  el('rotY').value = state.rotY;
-  el('rotZ').value = state.rotZ;
-  el('frequency').value = state.frequency;
-  el('amplitude').value = state.amplitude;
-  el('speed').value = state.speed;
-  el('zoom').value = state.zoom;
-  el('persistence').value = state.persistence;
-  el('volume').value = state.volume;
-  audioPlayer.volume = state.volume / 100;
   
-  document.querySelectorAll('input[type=range]').forEach(input => {
-    input.dispatchEvent(new Event('input'));
-  });
+  el('waveformType').value = state.waveformType;
+  el('shapeType').value = state.shapeType;
+  
+  el('posX').value = state.posX; el('v-posX').textContent = state.posX.toFixed(2);
+  el('posY').value = state.posY; el('v-posY').textContent = state.posY.toFixed(2);
+  el('scale').value = state.scale; el('v-scale').textContent = state.scale.toFixed(2);
+  el('rotation').value = state.rotation; el('v-rotation').textContent = state.rotation + '°';
+  el('rotX').value = state.rotX; el('v-rotX').textContent = state.rotX + '°';
+  el('rotY').value = state.rotY; el('v-rotY').textContent = state.rotY + '°';
+  el('rotZ').value = state.rotZ; el('v-rotZ').textContent = state.rotZ + '°';
+  
+  el('frequency').value = state.frequency; el('v-frequency').textContent = state.frequency.toFixed(1) + ' Hz';
+  el('amplitude').value = state.amplitude; el('v-amplitude').textContent = state.amplitude.toFixed(2);
+  el('speed').value = state.speed; el('v-speed').textContent = state.speed.toFixed(2);
+  
+  el('zoom').value = state.zoom; el('v-zoom').textContent = state.zoom.toFixed(2) + '×';
+  el('persistence').value = state.persistence; el('v-persistence').textContent = state.persistence.toFixed(2);
+
+  modeTabs.forEach(t => t.classList.toggle('active', t.getAttribute('data-mode') === state.mode));
+  dimBtns.forEach(b => b.classList.toggle('active', b.getAttribute('data-dim') === (state.is3D ? '3d' : '2d')));
+  audioDimBtns.forEach(b => b.classList.toggle('active', b.getAttribute('data-audiodim') === state.audioDimension));
+
+  el('sec-waveform').classList.add('hidden');
+  el('sec-shape').classList.remove('hidden');
+  el('sec-audio').classList.add('hidden');
+  el('field-rotation2d').classList.remove('hidden');
+  el('field-rotX').classList.add('hidden');
+  el('field-rotY').classList.add('hidden');
+  el('field-rotZ').classList.add('hidden');
+
   updateReadouts();
 });
 
-/* MULTI-PASS GLOW RENDERER */
-function renderTracePasses(drawPathFn) {
-  ctx.save();
-  ctx.lineCap = 'round';
-  ctx.lineJoin = 'round';
+/* MAIN RENDER LOOP */
+let lastTime = performance.now();
+let autoRot = 0;
+let fpsFrames = 0, lastFpsUpdate = performance.now();
 
-  // Pass 1: Outer Ambient Glow
-  ctx.strokeStyle = 'rgba(85, 255, 153, 0.25)';
-  ctx.lineWidth = 5;
-  ctx.shadowColor = '#4dffa0';
-  ctx.shadowBlur = 12;
-  drawPathFn();
+function render(now){
+  requestAnimationFrame(render);
 
-  // Pass 2: Sharp Core Beam
-  ctx.strokeStyle = '#ffffff';
-  ctx.lineWidth = 1.25;
-  ctx.shadowColor = '#88ffbb';
-  ctx.shadowBlur = 3;
-  drawPathFn();
+  const dt = (now - lastTime) / 1000;
+  lastTime = now;
 
-  ctx.restore();
-}
+  fpsFrames++;
+  if(now - lastFpsUpdate >= 500){
+    const fps = Math.round((fpsFrames * 1000) / (now - lastFpsUpdate));
+    el('readoutFps').innerHTML = `FPS: <b>${fps}</b>`;
+    fpsFrames = 0;
+    lastFpsUpdate = now;
+  }
 
-/* RENDER LOOP */
-let angle = 0;
-let phaseAcc = 0;
+  autoRot += state.speed * dt * 90;
 
-function render(){
   applyDecayAndGrid();
-  ctx.save();
-  ctx.translate(cssW / 2, cssH / 2);
 
-  const scaleFactor = Math.min(cssW, cssH) * 0.35 * state.scale * state.zoom;
-  angle += state.speed * 2;
+  const w = cssW, h = cssH;
+  const centerX = w / 2 + state.posX * (w / 2);
+  const centerY = h / 2 - state.posY * (h / 2);
+  const baseRadius = (Math.min(w, h) * 0.35) * state.scale * state.zoom;
 
-  renderTracePasses(() => {
-    if(state.mode === 'waveform'){
+  ctx.strokeStyle = '#55ff99';
+  ctx.lineWidth = 2;
+  ctx.shadowColor = '#55ff99';
+  ctx.shadowBlur = 0; // Pure crisp raster lines without antialiased glow soft-edges
+
+  if(state.mode === 'waveform'){
+    ctx.beginPath();
+    const points = 300;
+    const freq = state.frequency / 50;
+
+    for(let i = 0; i <= points; i++){
+      const t = i / points;
+      const x = (t - 0.5) * w * 0.8 * state.zoom + centerX;
+      let phase = t * Math.PI * 2 * freq + autoRot * 0.05;
+      let yVal = 0;
+
+      switch(state.waveformType){
+        case 'sine':
+          yVal = Math.sin(phase);
+          break;
+        case 'square':
+          yVal = Math.sin(phase) >= 0 ? 1 : -1;
+          break;
+        case 'triangle':
+          yVal = Math.asin(Math.sin(phase)) / (Math.PI / 2);
+          break;
+        case 'sawtooth':
+          yVal = 2 * (phase / (2 * Math.PI) - Math.floor(0.5 + phase / (2 * Math.PI)));
+          break;
+      }
+
+      const y = centerY - yVal * baseRadius * state.amplitude;
+      const px = Math.floor(x);
+      const py = Math.floor(y);
+
+      if(i === 0) ctx.moveTo(px, py);
+      else ctx.lineTo(px, py);
+    }
+    ctx.stroke();
+
+  } else if(state.mode === 'shape'){
+    const rotZTotal = state.rotation + autoRot;
+
+    if(!state.is3D){
+      const shapeFn = ShapeFns[state.shapeType] || ShapeFns.circle;
+      const rad = rotZTotal * Math.PI / 180;
+      const cosR = Math.cos(rad), sinR = Math.sin(rad);
+
       ctx.beginPath();
-      const points = 500;
-      phaseAcc += (state.frequency / 1000) * 0.1;
-      for(let i = 0; i < points; i++){
-        const t = (i / points) * Math.PI * 4 + phaseAcc;
-        let yVal = 0;
-        if(state.waveformType === 'sine') yVal = Math.sin(t);
-        else if(state.waveformType === 'square') yVal = Math.sin(t) >= 0 ? 1 : -1;
-        else if(state.waveformType === 'triangle') yVal = (2 / Math.PI) * Math.asin(Math.sin(t));
-        else if(state.waveformType === 'sawtooth') yVal = 2 * (t / (2 * Math.PI) - Math.floor(0.5 + t / (2 * Math.PI)));
+      const numSteps = 250;
+      for(let i = 0; i <= numSteps; i++){
+        const p = shapeFn(i / numSteps);
+        const rx = p.x * cosR - p.y * sinR;
+        const ry = p.x * sinR + p.y * cosR;
 
-        const x = (-0.8 + (i / points) * 1.6 + state.posX) * scaleFactor;
-        const y = (yVal * state.amplitude * 0.8 + state.posY) * scaleFactor;
-        if(i === 0) ctx.moveTo(x, y);
-        else ctx.lineTo(x, y);
+        const px = Math.floor(centerX + rx * baseRadius);
+        const py = Math.floor(centerY - ry * baseRadius);
+
+        if(i === 0) ctx.moveTo(px, py);
+        else ctx.lineTo(px, py);
       }
       ctx.stroke();
-    }
-    else if(state.mode === 'shape'){
-      if(state.is3D){
-        const geom = get3DGeometry(state.shapeType);
-        const rx = state.rotX + angle;
-        const ry = state.rotY + angle * 0.7;
-        const rz = state.rotZ;
 
-        geom.forEach(stroke => {
-          ctx.beginPath();
-          stroke.forEach((pt, i) => {
-            const proj = project3D(pt, rx, ry, rz);
-            const x = (proj.x + state.posX) * scaleFactor;
-            const y = (proj.y + state.posY) * scaleFactor;
-            if(i === 0) ctx.moveTo(x, y);
-            else ctx.lineTo(x, y);
-          });
-          ctx.stroke();
-        });
-      } else {
-        const fn = ShapeFns[state.shapeType] || ShapeFns.circle;
-        const samples = 400;
-        const rad = (state.rotation * Math.PI) / 180;
-        const cosR = Math.cos(rad), sinR = Math.sin(rad);
+    } else {
+      const geom = get3DGeometry(state.shapeType);
+      const rx = state.rotX + autoRot * 0.5;
+      const ry = state.rotY + autoRot;
+      const rz = state.rotZ;
 
+      geom.forEach(stroke => {
         ctx.beginPath();
-        for(let i = 0; i <= samples; i++){
-          const p = fn(i / samples);
-          const rx = p.x * cosR - p.y * sinR;
-          const ry = p.x * sinR + p.y * cosR;
-          const x = (rx + state.posX) * scaleFactor;
-          const y = (ry + state.posY) * scaleFactor;
-          if(i === 0) ctx.moveTo(x, y);
-          else ctx.lineTo(x, y);
-        }
+        stroke.forEach((pt, idx) => {
+          const proj = project3D(pt, rx, ry, rz);
+          const px = Math.floor(centerX + proj.x * baseRadius);
+          const py = Math.floor(centerY - proj.y * baseRadius);
+
+          if(idx === 0) ctx.moveTo(px, py);
+          else ctx.lineTo(px, py);
+        });
         ctx.stroke();
-      }
+      });
     }
-    else if(state.mode === 'audio' && analyserL){
+
+  } else if(state.mode === 'audio'){
+    if(analyserL && analyserR){
       analyserL.getByteTimeDomainData(dataArrayL);
-      if(analyserR) analyserR.getByteTimeDomainData(dataArrayR);
+      analyserR.getByteTimeDomainData(dataArrayR);
 
       ctx.beginPath();
+
       if(state.audioDimension === '1d'){
-        const sliceWidth = (scaleFactor * 2) / dataArrayL.length;
-        let x = -scaleFactor + state.posX * scaleFactor;
+        const sliceWidth = w / dataArrayL.length;
+        let x = 0;
 
-        for (let i = 0; i < dataArrayL.length; i++) {
+        for(let i = 0; i < dataArrayL.length; i++){
           const v = dataArrayL[i] / 128.0;
-          const y = ((v - 1) * scaleFactor * 0.8) + state.posY * scaleFactor;
+          const y = centerY + (v - 1) * baseRadius;
+          const px = Math.floor(x);
+          const py = Math.floor(y);
 
-          if (i === 0) ctx.moveTo(x, y);
-          else ctx.lineTo(x, y);
+          if(i === 0) ctx.moveTo(px, py);
+          else ctx.lineTo(px, py);
 
           x += sliceWidth;
         }
       } else {
-        for (let i = 0; i < dataArrayL.length; i++) {
-          const xVal = (dataArrayL[i] / 128.0 - 1) * scaleFactor + state.posX * scaleFactor;
-          const yVal = (dataArrayR[i] / 128.0 - 1) * scaleFactor + state.posY * scaleFactor;
+        for(let i = 0; i < dataArrayL.length; i += 2){
+          const xVal = (dataArrayL[i] - 128) / 128.0;
+          const yVal = (dataArrayR[i] - 128) / 128.0;
 
-          if (i === 0) ctx.moveTo(xVal, yVal);
-          else ctx.lineTo(xVal, yVal);
+          const px = Math.floor(centerX + xVal * baseRadius);
+          const py = Math.floor(centerY - yVal * baseRadius);
+
+          if(i === 0) ctx.moveTo(px, py);
+          else ctx.lineTo(px, py);
         }
       }
       ctx.stroke();
+    } else {
+      ctx.font = '12px ' + getComputedStyle(document.body).getPropertyValue('--font-mono');
+      ctx.fillStyle = 'rgba(85,255,153,0.5)';
+      ctx.textAlign = 'center';
+      ctx.fillText('NO AUDIO LOADED - LOAD FILE TO VIEW VECTOR DATA', Math.floor(w / 2), Math.floor(h / 2));
     }
-  });
-
-  ctx.restore();
-  requestAnimationFrame(render);
+  }
 }
 
 requestAnimationFrame(render);
+
 })();
 </script>
 </body>
