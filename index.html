@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>Virtual Vector Oscilloscope & Audio Synthesizer</title>
+<title>Virtual Oscilloscope</title>
 
 <style>
 :root{
@@ -214,7 +214,7 @@ canvas#scope{
 
 .mode-tabs{
   display:grid;
-  grid-template-columns:repeat(2,1fr);
+  grid-template-columns:repeat(3,1fr);
   gap:6px;
 }
 
@@ -364,6 +364,29 @@ input[type=range]::-moz-range-thumb{
   color:#eafff2;
 }
 
+.btn.danger:hover{
+  border-color:var(--accent);
+  color:var(--accent);
+}
+
+.file-drop{
+  border:1px dashed var(--panel-border);
+  border-radius:8px;
+  padding:12px 10px;
+  text-align:center;
+  font-size:11px;
+  color:var(--text-dim);
+  cursor:pointer;
+  font-family:var(--font-mono);
+  transition:all 0.2s ease;
+  word-break: break-all;
+}
+
+.file-drop:hover{
+  border-color:var(--phosphor);
+  color:var(--phosphor);
+}
+
 .section{
   display:flex;
   flex-direction:column;
@@ -415,7 +438,7 @@ footer{
 <div class="app">
   <div class="title-row">
     <span class="brand">◉ SCOPE-1 HD</span>
-    <span>Vector Oscilloscope & Synthesizer</span>
+    <span>Vector Oscilloscope & Audio Analyzer</span>
   </div>
 
   <div class="instrument">
@@ -447,7 +470,7 @@ footer{
 
     <div class="panel">
       <div>
-        <h3>Audio Control</h3>
+        <h3>Audio Synth Control</h3>
         <div class="btn-row">
           <button class="btn primary" id="btnAudioToggle">▶ Start Audio Engine</button>
         </div>
@@ -456,8 +479,9 @@ footer{
       <div>
         <h3>Signal Source</h3>
         <div class="mode-tabs" id="modeTabs">
-          <div class="mode-tab active" data-mode="shape">Shape (Vector XY)</div>
-          <div class="mode-tab" data-mode="waveform">Waveform (1D)</div>
+          <div class="mode-tab active" data-mode="shape">Shape</div>
+          <div class="mode-tab" data-mode="waveform">Waveform</div>
+          <div class="mode-tab" data-mode="audio">Audio File</div>
         </div>
       </div>
 
@@ -510,6 +534,42 @@ footer{
             <div class="toggle-btn active" data-dim="2d">2D</div>
             <div class="toggle-btn" data-dim="3d">3D</div>
           </div>
+        </div>
+      </div>
+
+      <div class="section hidden" id="sec-audio">
+        <h3>Audio File Upload</h3>
+        <div class="file-drop" id="fileDrop">Click or Drag & Drop audio file here…</div>
+        <input type="file" id="audioFile" accept="audio/*" style="display:none">
+
+        <div class="field" id="audioDimensionField">
+          <div class="field-row"><span>Display Mode</span></div>
+          <div class="toggle-row">
+            <div class="toggle-btn active" data-audiodim="1d">1D Waveform</div>
+            <div class="toggle-btn" data-audiodim="2d">2D Vector XY</div>
+          </div>
+        </div>
+
+        <div class="btn-row">
+          <button class="btn primary" id="btnPlay">▶ Play</button>
+          <button class="btn" id="btnPause">‖ Pause</button>
+          <button class="btn danger" id="btnStop">■ Stop</button>
+        </div>
+
+        <div class="field">
+          <div class="field-row">
+            <span>Seek</span>
+            <span class="val" id="v-seek">0:00 / 0:00</span>
+          </div>
+          <input type="range" id="seek" min="0" max="100" step="0.1" value="0">
+        </div>
+
+        <div class="field">
+          <div class="field-row">
+            <span>Volume</span>
+            <span class="val" id="v-volume">80%</span>
+          </div>
+          <input type="range" id="volume" min="0" max="100" step="1" value="80">
         </div>
       </div>
 
@@ -625,6 +685,8 @@ footer{
   <footer>SCOPE-1 HD · Synchronized Oscilloscope & Vector Synth</footer>
 </div>
 
+<audio id="audioElement" style="display:none"></audio>
+
 <script>
 (function(){
 "use strict";
@@ -634,6 +696,7 @@ const defaults = {
   waveformType: 'sine',
   shapeType: 'circle',
   is3D: false,
+  audioDimension: '1d',
   posX: 0,
   posY: 0,
   scale: 1,
@@ -645,6 +708,7 @@ const defaults = {
   amplitude: 0.3,
   speed: 0.15,
   zoom: 1,
+  volume: 80,
   persistence: 0.70,
   audioActive: false
 };
@@ -954,19 +1018,32 @@ function samplePointAt(t){
   }
 }
 
-/* REAL-TIME AUDIO SYNTHESIZER (AUDIO WORKLET ENGINE) */
+/* REAL-TIME AUDIO SYNTHESIZER */
 let audioCtx = null;
 let scriptNode = null;
 let masterGain = null;
+let audioAnalyser = null;
+let audioSourceNode = null;
+
+const audioElement = document.getElementById('audioElement');
 
 function initAudioEngine(){
   if(audioCtx) return;
   audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-  
+
   const bufferSize = 2048;
   scriptNode = audioCtx.createScriptProcessor(bufferSize, 0, 2);
   masterGain = audioCtx.createGain();
   masterGain.gain.setValueAtTime(0, audioCtx.currentTime);
+
+  audioAnalyser = audioCtx.createAnalyser();
+  audioAnalyser.fftSize = 2048;
+
+  try {
+    audioSourceNode = audioCtx.createMediaElementSource(audioElement);
+    audioSourceNode.connect(audioAnalyser);
+    audioAnalyser.connect(audioCtx.destination);
+  } catch(e){}
 
   let phase = 0;
   scriptNode.onaudioprocess = function(e){
@@ -975,7 +1052,7 @@ function initAudioEngine(){
     const delta = state.frequency / audioCtx.sampleRate;
 
     for(let i = 0; i < bufferSize; i++){
-      if(state.audioActive){
+      if(state.audioActive && state.mode !== 'audio'){
         const pt = samplePointAt(phase);
         outputL[i] = Math.max(-1, Math.min(1, pt.x));
         outputR[i] = Math.max(-1, Math.min(1, pt.y));
@@ -993,12 +1070,71 @@ function initAudioEngine(){
 
 function updateAudioParams(){
   if(!audioCtx) return;
-  if(audioCtx.state === 'suspended' && state.audioActive){
+  if(audioCtx.state === 'suspended' && (state.audioActive || state.mode === 'audio')){
     audioCtx.resume();
   }
-  const targetGain = state.audioActive ? 0.8 : 0;
+  const targetGain = (state.audioActive && state.mode !== 'audio') ? 0.8 : 0;
   masterGain.gain.setTargetAtTime(targetGain, audioCtx.currentTime, 0.02);
 }
+
+/* AUDIO FILE HANDLING */
+const fileDrop = document.getElementById('fileDrop');
+const audioFileInput = document.getElementById('audioFile');
+
+fileDrop.addEventListener('click', () => audioFileInput.click());
+fileDrop.addEventListener('dragover', e => { e.preventDefault(); fileDrop.style.borderColor = '#55ff99'; });
+fileDrop.addEventListener('dragleave', () => { fileDrop.style.borderColor = ''; });
+fileDrop.addEventListener('drop', e => {
+  e.preventDefault();
+  fileDrop.style.borderColor = '';
+  if(e.dataTransfer.files.length) loadAudioFile(e.dataTransfer.files[0]);
+});
+
+audioFileInput.addEventListener('change', e => {
+  if(e.target.files.length) loadAudioFile(e.target.files[0]);
+});
+
+function loadAudioFile(file){
+  initAudioEngine();
+  const url = URL.createObjectURL(file);
+  audioElement.src = url;
+  fileDrop.textContent = `Loaded: ${file.name}`;
+}
+
+document.getElementById('btnPlay').addEventListener('click', () => {
+  initAudioEngine();
+  audioElement.play();
+});
+
+document.getElementById('btnPause').addEventListener('click', () => audioElement.pause());
+document.getElementById('btnStop').addEventListener('click', () => {
+  audioElement.pause();
+  audioElement.currentTime = 0;
+});
+
+const seekSlider = document.getElementById('seek');
+audioElement.addEventListener('timeupdate', () => {
+  if(audioElement.duration){
+    seekSlider.value = (audioElement.currentTime / audioElement.duration) * 100;
+    const curM = Math.floor(audioElement.currentTime / 60);
+    const curS = Math.floor(audioElement.currentTime % 60).toString().padStart(2, '0');
+    const durM = Math.floor(audioElement.duration / 60);
+    const durS = Math.floor(audioElement.duration % 60).toString().padStart(2, '0');
+    document.getElementById('v-seek').textContent = `${curM}:${curS} / ${durM}:${durS}`;
+  }
+});
+
+seekSlider.addEventListener('input', () => {
+  if(audioElement.duration){
+    audioElement.currentTime = (seekSlider.value / 100) * audioElement.duration;
+  }
+});
+
+document.getElementById('volume').addEventListener('input', e => {
+  const v = e.target.value;
+  audioElement.volume = v / 100;
+  document.getElementById('v-volume').textContent = `${v}%`;
+});
 
 /* UI CONTROLS & BINDINGS */
 const el = id => document.getElementById(id);
@@ -1007,8 +1143,10 @@ function updateReadouts(){
   el('readoutMode').innerHTML = `MODE: <b>${state.mode.toUpperCase()}</b>`;
   if(state.mode === 'waveform'){
     el('readoutSrc').innerHTML = `SRC: <b>${state.waveformType.toUpperCase()}</b>`;
-  } else {
+  } else if(state.mode === 'shape'){
     el('readoutSrc').innerHTML = `SRC: <b>${state.shapeType.toUpperCase()} · ${state.is3D ? '3D (1-LINE)' : '2D (1-LINE)'}</b>`;
+  } else {
+    el('readoutSrc').innerHTML = `SRC: <b>AUDIO FILE (${state.audioDimension.toUpperCase()})</b>`;
   }
   updateAudioParams();
 }
@@ -1062,6 +1200,7 @@ modeTabs.forEach(tab => {
     state.mode = tab.getAttribute('data-mode');
     el('sec-waveform').classList.toggle('hidden', state.mode !== 'waveform');
     el('sec-shape').classList.toggle('hidden', state.mode !== 'shape');
+    el('sec-audio').classList.toggle('hidden', state.mode !== 'audio');
     updateReadouts();
   });
 });
@@ -1076,6 +1215,16 @@ dimBtns.forEach(btn => {
     el('field-rotX').classList.toggle('hidden', !state.is3D);
     el('field-rotY').classList.toggle('hidden', !state.is3D);
     el('field-rotZ').classList.toggle('hidden', !state.is3D);
+    updateReadouts();
+  });
+});
+
+const audioDimBtns = document.querySelectorAll('[data-audiodim]');
+audioDimBtns.forEach(btn => {
+  btn.addEventListener('click', () => {
+    audioDimBtns.forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    state.audioDimension = btn.getAttribute('data-audiodim');
     updateReadouts();
   });
 });
@@ -1100,16 +1249,41 @@ function render(){
   const baseRadius = Math.min(cssW, cssH) * 0.35;
 
   ctx.beginPath();
-  const samples = 1000;
-  for(let i = 0; i <= samples; i++){
-    const t = i / samples;
-    const pt = samplePointAt(t);
+  if(state.mode === 'audio' && audioAnalyser){
+    const timeData = new Uint8Array(audioAnalyser.frequencyBinCount);
+    audioAnalyser.getByteTimeDomainData(timeData);
 
-    const screenX = cx + pt.x * baseRadius;
-    const screenY = cy - pt.y * baseRadius;
+    if(state.audioDimension === '2d'){
+      for(let i = 0; i < timeData.length - 1; i++){
+        const xVal = (timeData[i] - 128) / 128;
+        const yVal = (timeData[i + 1] - 128) / 128;
+        const screenX = cx + xVal * baseRadius * state.scale;
+        const screenY = cy - yVal * baseRadius * state.scale;
+        if(i === 0) ctx.moveTo(screenX, screenY);
+        else ctx.lineTo(screenX, screenY);
+      }
+    } else {
+      for(let i = 0; i < timeData.length; i++){
+        const x = (i / timeData.length - 0.5) * cssW * 0.9;
+        const y = ((timeData[i] - 128) / 128) * baseRadius * state.scale;
+        const screenX = cx + x;
+        const screenY = cy - y;
+        if(i === 0) ctx.moveTo(screenX, screenY);
+        else ctx.lineTo(screenX, screenY);
+      }
+    }
+  } else {
+    const samples = 1000;
+    for(let i = 0; i <= samples; i++){
+      const t = i / samples;
+      const pt = samplePointAt(t);
 
-    if(i === 0) ctx.moveTo(screenX, screenY);
-    else ctx.lineTo(screenX, screenY);
+      const screenX = cx + pt.x * baseRadius;
+      const screenY = cy - pt.y * baseRadius;
+
+      if(i === 0) ctx.moveTo(screenX, screenY);
+      else ctx.lineTo(screenX, screenY);
+    }
   }
   ctx.stroke();
 
