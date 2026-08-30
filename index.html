@@ -40,8 +40,8 @@ html, body {
 }
 
 .header {
-  display: flex; justify-content: space-between; align-width: 100%;
-  max-width: 1280px; width: 100%; padding: 0 4px; font-family: var(--font-mono);
+  display: flex; justify-content: space-between; align-items: baseline; width: 100%;
+  max-width: 1280px; padding: 0 4px; font-family: var(--font-mono);
   font-size: 11px; color: var(--text-dim); letter-spacing: 1px;
 }
 
@@ -174,7 +174,6 @@ select {
   </div>
 
   <div class="scope-container">
-    <!-- DISPLAY CRT -->
     <div class="screen-assembly">
       <div class="screen-header">
         <div class="status-badge"><span class="led green" id="trigLed"></span><span id="trigStatus">TRIG'D</span></div>
@@ -188,9 +187,7 @@ select {
       </div>
     </div>
 
-    <!-- CONTROL HARDWARE PANEL -->
     <div class="control-panel">
-      <!-- HORIZONTAL SYSTEM -->
       <div class="panel-section">
         <div class="section-title">Horizontal (Timebase)</div>
         <div class="control-grid">
@@ -207,7 +204,6 @@ select {
         </div>
       </div>
 
-      <!-- VERTICAL CHANNEL 1 -->
       <div class="panel-section">
         <div class="section-title">CH1 Vertical <span style="color:var(--ch1-color)">●</span></div>
         <div class="btn-group">
@@ -228,15 +224,34 @@ select {
           </div>
         </div>
         <select id="selectCh1Signal" style="margin-top:6px;">
-          <option value="sine">Signal: 1 kHz Sine Wave</option>
-          <option value="square">Signal: 1 kHz Square Wave</option>
-          <option value="triangle">Signal: 1 kHz Triangle Wave</option>
-          <option value="cal">Signal: 1 kHz Calibrator Square (5V)</option>
-          <option value="lissajousX">Signal: Lissajous X (3D Vector)</option>
+          <optgroup label="Standard Oscilloscope Signals">
+            <option value="sine">Signal: 1 kHz Sine Wave</option>
+            <option value="square">Signal: 1 kHz Square Wave</option>
+            <option value="triangle">Signal: 1 kHz Triangle Wave</option>
+            <option value="cal">Signal: 1 kHz Calibrator Square (5V)</option>
+          </optgroup>
+          <optgroup label="3D Volumetric Mesh Vector Waveforms">
+            <option value="torus">Shape: 3D Torus / Donut</option>
+            <option value="cube">Shape: 3D Wireframe Cube</option>
+            <option value="sphere">Shape: 3D Sphere Mesh</option>
+            <option value="cone">Shape: 3D Cone</option>
+            <option value="cylinder">Shape: 3D Cylinder</option>
+            <option value="icosahedron">Shape: 3D Icosahedron (20-Face)</option>
+            <option value="cuboctahedron">Shape: 3D Cuboctahedron</option>
+            <option value="heart3d">Shape: 3D Parametric Heart</option>
+            <option value="prismTriangle">Shape: 3D Triangular Prism</option>
+            <option value="prismStar">Shape: 3D Star Prism</option>
+          </optgroup>
+          <optgroup label="2D Complex Vector Waveforms">
+            <option value="lissajous32">Shape: 3:2 Lissajous Knot</option>
+            <option value="trefoil">Shape: Trefoil Knot</option>
+            <option value="rose">Shape: 8-Petal Rose</option>
+            <option value="star2d">Shape: 5-Point Star</option>
+            <option value="heart2d">Shape: Cardioid Heart</option>
+          </optgroup>
         </select>
       </div>
 
-      <!-- VERTICAL CHANNEL 2 -->
       <div class="panel-section">
         <div class="section-title">CH2 Vertical <span style="color:var(--ch2-color)">●</span></div>
         <div class="btn-group">
@@ -257,14 +272,33 @@ select {
           </div>
         </div>
         <select id="selectCh2Signal" style="margin-top:6px;">
-          <option value="cosine">Signal: 1 kHz Cosine Wave</option>
-          <option value="sawtooth">Signal: 400 Hz Sawtooth</option>
-          <option value="noise">Signal: Thermal Noise</option>
-          <option value="lissajousY">Signal: Lissajous Y (3D Vector)</option>
+          <optgroup label="Standard Oscilloscope Signals">
+            <option value="cosine">Signal: 1 kHz Cosine Wave</option>
+            <option value="sawtooth">Signal: 400 Hz Sawtooth</option>
+            <option value="noise">Signal: Thermal Noise</option>
+          </optgroup>
+          <optgroup label="3D Volumetric Mesh Vector Waveforms">
+            <option value="torus">Shape: 3D Torus / Donut</option>
+            <option value="cube">Shape: 3D Wireframe Cube</option>
+            <option value="sphere">Shape: 3D Sphere Mesh</option>
+            <option value="cone">Shape: 3D Cone</option>
+            <option value="cylinder">Shape: 3D Cylinder</option>
+            <option value="icosahedron">Shape: 3D Icosahedron (20-Face)</option>
+            <option value="cuboctahedron">Shape: 3D Cuboctahedron</option>
+            <option value="heart3d">Shape: 3D Parametric Heart</option>
+            <option value="prismTriangle">Shape: 3D Triangular Prism</option>
+            <option value="prismStar">Shape: 3D Star Prism</option>
+          </optgroup>
+          <optgroup label="2D Complex Vector Waveforms">
+            <option value="lissajous32">Shape: 3:2 Lissajous Knot</option>
+            <option value="trefoil">Shape: Trefoil Knot</option>
+            <option value="rose">Shape: 8-Petal Rose</option>
+            <option value="star2d">Shape: 5-Point Star</option>
+            <option value="heart2d">Shape: Cardioid Heart</option>
+          </optgroup>
         </select>
       </div>
 
-      <!-- TRIGGER ENGINE -->
       <div class="panel-section">
         <div class="section-title">Trigger Engine</div>
         <div class="btn-group">
@@ -290,9 +324,8 @@ select {
         </div>
       </div>
 
-      <!-- DISPLAY & XY MODE -->
       <div class="panel-section">
-        <div class="section-title">Display Mode & CRT Controls</div>
+        <div class="section-title">Display Mode &amp; CRT Controls</div>
         <div class="btn-group">
           <button class="btn active" id="btnModeYT">Y-T Dual</button>
           <button class="btn" id="btnModeXY">X-Y Mode</button>
@@ -323,7 +356,7 @@ select {
    ========================================================= */
 const ScopeState = {
   // Horizontal Timebase Settings
-  timeDivIdx: 6, // 1.0 ms
+  timeDivIdx: 4, // 1.0 ms
   timeDivs: [0.05e-3, 0.1e-3, 0.2e-3, 0.5e-3, 1.0e-3, 2.0e-3, 5.0e-3, 10.0e-3, 20.0e-3, 50.0e-3],
   timeLabels: ["50µs", "100µs", "200µs", "500µs", "1.0ms", "2.0ms", "5.0ms", "10ms", "20ms", "50ms"],
   hPos: 0.0,
@@ -386,39 +419,223 @@ window.addEventListener('resize', resizeScope);
 resizeScope();
 
 /* =========================================================
+   3D GEOMETRY GENERATOR & PROJECTION MATHEMATICS
+   ========================================================= */
+function project3D(pt, rxDeg, ryDeg, rzDeg){
+  const rx = rxDeg * Math.PI / 180;
+  const ry = ryDeg * Math.PI / 180;
+  const rz = rzDeg * Math.PI / 180;
+
+  const cx = Math.cos(rx), sx = Math.sin(rx);
+  const cy = Math.cos(ry), sy = Math.sin(ry);
+  const cz = Math.cos(rz), sz = Math.sin(rz);
+
+  let [x, y, z] = pt;
+
+  let y1 = y * cx - z * sx, z1 = y * sx + z * cx;
+  let x2 = x * cy + z1 * sy, z2 = -x * sy + z1 * cy;
+  let x3 = x2 * cz - y1 * sz, y3 = x2 * sz + y1 * cz;
+
+  const dist = 3.5;
+  const scale = dist / (dist + z2);
+
+  return { x: x3 * scale, y: y3 * scale };
+}
+
+function buildCube(){
+  const v = [[-1,-1,-1],[1,-1,-1],[1,1,-1],[-1,1,-1],[-1,-1,1],[1,-1,1],[1,1,1],[-1,1,1]];
+  return [
+    [v[0],v[1],v[2],v[3],v[0]],
+    [v[4],v[5],v[6],v[7],v[4]],
+    [v[0],v[4]], [v[1],v[5]], [v[2],v[6]], [v[3],v[7]]
+  ];
+}
+
+function buildTorus(){
+  const R = 1.0, r = 0.4, rings = 12, segs = 24, strokes = [];
+  for(let i = 0; i < rings; i++){
+    const u = (i * 2 * Math.PI) / rings;
+    const ring = [];
+    for(let j = 0; j <= segs; j++){
+      const v = (j * 2 * Math.PI) / segs;
+      ring.push([(R + r * Math.cos(v)) * Math.cos(u), (R + r * Math.cos(v)) * Math.sin(u), r * Math.sin(v)]);
+    }
+    strokes.push(ring);
+  }
+  return strokes;
+}
+
+function buildCone(){
+  const segs = 16, strokes = [], base = [], apex = [0, 1.2, 0];
+  for(let i = 0; i <= segs; i++){
+    const a = (i * 2 * Math.PI) / segs;
+    const pt = [Math.cos(a), -1, Math.sin(a)];
+    base.push(pt);
+    if(i % 2 === 0) strokes.push([apex, pt]);
+  }
+  strokes.push(base);
+  return strokes;
+}
+
+function buildCylinder(){
+  const segs = 16, strokes = [], top = [], bot = [];
+  for(let i = 0; i <= segs; i++){
+    const a = (i * 2 * Math.PI) / segs;
+    const ptT = [Math.cos(a), 1, Math.sin(a)];
+    const ptB = [Math.cos(a), -1, Math.sin(a)];
+    top.push(ptT); bot.push(ptB);
+    if(i % 4 === 0) strokes.push([ptT, ptB]);
+  }
+  strokes.push(top, bot);
+  return strokes;
+}
+
+function buildIcosahedron(){
+  const t = (1 + Math.sqrt(5)) / 2;
+  const v = [
+    [-1,t,0],[1,t,0],[-1,-t,0],[1,-t,0],
+    [0,-1,t],[0,1,t],[0,-1,-t],[0,1,-t],
+    [t,0,-1],[t,0,1],[-t,0,-1],[-t,0,1]
+  ].map(p => p.map(c => c * 0.7));
+
+  const edges = [
+    [0,11],[0,5],[0,1],[0,7],[0,10],[1,5],[5,11],[11,10],[10,7],[7,1],
+    [3,9],[3,4],[3,2],[3,6],[3,8],[4,9],[9,8],[8,6],[6,2],[2,4],
+    [4,5],[5,9],[8,1],[1,6],[10,7],[7,6],[2,10],[11,4]
+  ];
+  return edges.map(e => [v[e[0]], v[e[1]]]);
+}
+
+function buildCuboctahedron(){
+  const v = [
+    [1,1,0],[-1,1,0],[1,-1,0],[-1,-1,0],
+    [1,0,1],[-1,0,1],[1,0,-1],[-1,0,-1],
+    [0,1,1],[0,-1,1],[0,1,-1],[0,-1,-1]
+  ].map(p => p.map(c => c * 0.8));
+
+  const edges = [
+    [0,8],[8,1],[1,10],[10,0],[2,9],[9,3],[3,11],[11,2],
+    [4,8],[8,5],[5,9],[9,4],[6,10],[10,7],[7,11],[11,6],
+    [0,4],[4,2],[2,6],[6,0],[1,5],[5,3],[3,7],[7,1]
+  ];
+  return edges.map(e => [v[e[0]], v[e[1]]]);
+}
+
+function buildSphere(){
+  const rings = 8, segs = 16, strokes = [];
+  for(let i = 1; i < rings; i++){
+    const phi = -Math.PI / 2 + (i * Math.PI) / rings;
+    const ring = [];
+    for(let j = 0; j <= segs; j++){
+      const theta = (j * 2 * Math.PI) / segs;
+      ring.push([Math.cos(phi)*Math.cos(theta), Math.sin(phi), Math.cos(phi)*Math.sin(theta)]);
+    }
+    strokes.push(ring);
+  }
+  return strokes;
+}
+
+function buildHeart3D(){
+  const rings = 10, segs = 24, strokes = [];
+  for(let i = 0; i <= rings; i++){
+    const u = (i / rings) * Math.PI;
+    const ring = [];
+    for(let j = 0; j <= segs; j++){
+      const v = (j / segs) * 2 * Math.PI;
+      const x = 16 * Math.pow(Math.sin(v), 3) * Math.sin(u);
+      const y = (13 * Math.cos(v) - 5 * Math.cos(2*v) - 2 * Math.cos(3*v) - Math.cos(4*v)) * Math.sin(u);
+      const z = 6 * Math.cos(u);
+      ring.push([x / 16, -(y + 2.5) / 16, z / 16]);
+    }
+    strokes.push(ring);
+  }
+  return strokes;
+}
+
+function buildPrismTriangle(){
+  const top = [], bot = [], strokes = [];
+  for(let i = 0; i < 3; i++){
+    const a = (i * 2 * Math.PI) / 3 - Math.PI / 2;
+    top.push([Math.cos(a), 1, Math.sin(a)]);
+    bot.push([Math.cos(a), -1, Math.sin(a)]);
+  }
+  top.push(top[0]); bot.push(bot[0]);
+  strokes.push(top, bot);
+  for(let i = 0; i < 3; i++) strokes.push([top[i], bot[i]]);
+  return strokes;
+}
+
+function buildPrismStar(){
+  const top = [], bot = [], strokes = [];
+  for(let i = 0; i < 10; i++){
+    const a = (i * Math.PI) / 5;
+    const r = (i % 2 === 0) ? 1.0 : 0.4;
+    top.push([r * Math.cos(a), 1, r * Math.sin(a)]);
+    bot.push([r * Math.cos(a), -1, r * Math.sin(a)]);
+  }
+  top.push(top[0]); bot.push(bot[0]);
+  strokes.push(top, bot);
+  for(let i = 0; i < 10; i++) strokes.push([top[i], bot[i]]);
+  return strokes;
+}
+
+const ShapeGeometry = {
+  cube: buildCube(),
+  torus: buildTorus(),
+  cone: buildCone(),
+  cylinder: buildCylinder(),
+  icosahedron: buildIcosahedron(),
+  cuboctahedron: buildCuboctahedron(),
+  sphere: buildSphere(),
+  heart3d: buildHeart3D(),
+  prismTriangle: buildPrismTriangle(),
+  prismStar: buildPrismStar()
+};
+
+/* =========================================================
    SIGNAL GENERATORS & HARDWARE CIRCUIT EMULATION
    ========================================================= */
-function generateRawSignal(type, t){
-  const f = 1000.0; // 1kHz fundamental standard test wave
-  switch(type){
-    case 'sine':
-      return 2.5 * Math.sin(2 * Math.PI * f * t);
-    case 'square':
-      return 2.5 * (Math.sin(2 * Math.PI * f * t) >= 0 ? 1 : -1);
-    case 'triangle':
-      return 2.5 * (2 / Math.PI) * Math.asin(Math.sin(2 * Math.PI * f * t));
-    case 'cosine':
-      return 2.5 * Math.cos(2 * Math.PI * f * t);
-    case 'sawtooth':
-      return 2.5 * (2 * ((400 * t) % 1) - 1);
-    case 'cal':
-      return ((t * 1000) % 1 > 0.5) ? 5.0 : 0.0;
-    case 'noise':
-      return (Math.random() - 0.5) * 2.0;
-    case 'lissajousX':
-      return 2.5 * Math.sin(2 * Math.PI * 500 * t);
-    case 'lissajousY':
-      return 2.5 * Math.sin(2 * Math.PI * 1000 * t + Math.PI/4);
-    default:
-      return 0.0;
+function generateRawSignal(type, t, channel){
+  const f = 1000.0;
+  const a = t * 2 * Math.PI * 200;
+
+  if(type === 'sine') return 2.5 * Math.sin(2 * Math.PI * f * t);
+  if(type === 'square') return 2.5 * (Math.sin(2 * Math.PI * f * t) >= 0 ? 1 : -1);
+  if(type === 'triangle') return 2.5 * (2 / Math.PI) * Math.asin(Math.sin(2 * Math.PI * f * t));
+  if(type === 'cosine') return 2.5 * Math.cos(2 * Math.PI * f * t);
+  if(type === 'sawtooth') return 2.5 * (2 * ((400 * t) % 1) - 1);
+  if(type === 'cal') return ((t * 1000) % 1 > 0.5) ? 2.5 : -2.5;
+  if(type === 'noise') return (Math.random() - 0.5) * 2.0;
+
+  // Complex 2D Curves
+  if(type === 'lissajous32') return channel === 1 ? 2.5 * Math.sin(3 * a) : 2.5 * Math.sin(2 * a);
+  if(type === 'trefoil') return channel === 1 ? 1.2 * (Math.sin(a) + 2 * Math.sin(2 * a)) : 1.2 * (Math.cos(a) - 2 * Math.cos(2 * a));
+  if(type === 'rose') return channel === 1 ? 2.5 * Math.cos(4 * a) * Math.cos(a) : 2.5 * Math.cos(4 * a) * Math.sin(a);
+  if(type === 'star2d'){
+    const r = (Math.floor(a / (Math.PI / 5)) % 2 === 0) ? 2.5 : 1.0;
+    return channel === 1 ? r * Math.cos(a) : r * Math.sin(a);
   }
+  if(type === 'heart2d'){
+    const x = 16 * Math.pow(Math.sin(a), 3);
+    const y = 13 * Math.cos(a) - 5 * Math.cos(2 * a) - 2 * Math.cos(3 * a) - Math.cos(4 * a);
+    return channel === 1 ? x / 6 : -y / 6;
+  }
+
+  // 3D Shapes (Projections routed through waveform channels)
+  if(ShapeGeometry[type]){
+    const rotY = t * 100;
+    const proj = project3D([Math.cos(a), Math.sin(a), 0], 25, rotY, 0);
+    return channel === 1 ? proj.x * 2.5 : proj.y * 2.5;
+  }
+
+  return 0.0;
 }
 
 // Simulated Hardware Coupling (DC vs AC vs GND)
 function processCoupling(val, coupling){
   if(coupling === 'GND') return 0.0;
-  if(coupling === 'AC') return val - 0.5; // Strip DC Offset component
-  return val; // DC Coupling
+  if(coupling === 'AC') return val - 0.5;
+  return val;
 }
 
 /* =========================================================
@@ -461,7 +678,6 @@ function drawReticle(){
   }
   ctx.stroke();
 
-  // Major Center Axis Reticle Subdivisions
   ctx.strokeStyle = 'rgba(70, 160, 100, 0.6)';
   const midX = Math.round(width / 2) + 0.5;
   const midY = Math.round(height / 2) + 0.5;
@@ -471,7 +687,6 @@ function drawReticle(){
   ctx.moveTo(0, midY); ctx.lineTo(width, midY);
   ctx.stroke();
 
-  // Sub-ticks along central axes
   ctx.beginPath();
   const subTicksX = GRID_COLS * 5;
   const subTicksY = GRID_ROWS * 5;
@@ -490,119 +705,137 @@ function drawReticle(){
    MAIN SCOPE EXECUTION LOOP
    ========================================================= */
 let sampleTime = 0;
+let autoRotY = 0;
 
 function renderScope(){
   requestAnimationFrame(renderScope);
 
-  sampleTime += 0.00005; // Simulation Clock
+  sampleTime += 0.00005;
+  autoRotY += 0.5;
 
-  // CRT Phosphor Persistence Simulation
   const fade = Math.max(0.05, 1.0 - ScopeState.persistence);
   traceCtx.fillStyle = `rgba(3, 13, 7, ${fade})`;
   traceCtx.fillRect(0, 0, width, height);
 
-  const timeDiv = ScopeState.timeDivs[ScopeState.timeDivIdx];
-  const totalTimeWindow = timeDiv * GRID_COLS;
-  const numSamples = 600;
-  const dt = totalTimeWindow / numSamples;
+  const pixelsPerDivY = height / GRID_ROWS;
+  const pixelsPerDivX = width / GRID_COLS;
+  const centerY = height / 2;
+  const centerX = width / 2;
+  const alpha = ScopeState.intensity;
 
-  // Sample Audio/Signal Buffers
-  const ch1Buffer = new Float32Array(numSamples);
-  const ch2Buffer = new Float32Array(numSamples);
+  // Direct 3D Mesh Rendering in X-Y Mode when a 3D Shape is Selected
+  if(ScopeState.displayMode === 'XY' && (ShapeGeometry[ScopeState.ch1Signal] || ShapeGeometry[ScopeState.ch2Signal])){
+    const activeShape = ShapeGeometry[ScopeState.ch1Signal] ? ScopeState.ch1Signal : ScopeState.ch2Signal;
+    const geom = ShapeGeometry[activeShape];
 
-  const timeOffset = ScopeState.hPos * timeDiv;
-
-  for(let i = 0; i < numSamples; i++){
-    const t = sampleTime + i * dt + timeOffset;
-    ch1Buffer[i] = processCoupling(generateRawSignal(ScopeState.ch1Signal, t), ScopeState.ch1Coupling);
-    ch2Buffer[i] = processCoupling(generateRawSignal(ScopeState.ch2Signal, t), ScopeState.ch2Coupling);
-  }
-
-  // Evaluate Hardware Trigger Engine
-  let trigOffsetIndex = findTriggerIndex(ch1Buffer, ScopeState.trigLevel, ScopeState.trigSlope);
-
-  const trigLed = document.getElementById('trigLed');
-  const trigStatus = document.getElementById('trigStatus');
-
-  if(trigOffsetIndex !== -1){
-    ScopeState.isTriggered = true;
-    trigLed.className = 'led green';
-    trigStatus.textContent = "TRIG'D";
-  } else {
-    ScopeState.isTriggered = false;
-    if(ScopeState.trigMode === 'NORM'){
-      trigLed.className = 'led red';
-      trigStatus.textContent = 'WAIT';
-    } else {
-      trigLed.className = 'led green';
-      trigStatus.textContent = 'AUTO';
-      trigOffsetIndex = 0; // Fallback Auto Sweep
-    }
-  }
-
-  // Draw Signals if Trigger condition allows frame sweep
-  if(ScopeState.trigMode !== 'NORM' || ScopeState.isTriggered){
-    const voltDiv1 = ScopeState.voltsDivs[ScopeState.ch1VoltsIdx];
-    const voltDiv2 = ScopeState.voltsDivs[ScopeState.ch2VoltsIdx];
-
-    const pixelsPerDivY = height / GRID_ROWS;
-    const pixelsPerDivX = width / GRID_COLS;
-
-    const centerY = height / 2;
-    const centerX = width / 2;
-
+    traceCtx.strokeStyle = `rgba(51, 255, 119, ${alpha})`;
+    traceCtx.shadowColor = 'rgba(51, 255, 119, 0.8)';
+    traceCtx.shadowBlur = 8 * alpha;
     traceCtx.lineWidth = 2.0;
-    const alpha = ScopeState.intensity;
 
-    if(ScopeState.displayMode === 'YT'){
-      // DRAW CHANNEL 1 (YELLOW)
-      traceCtx.strokeStyle = `rgba(255, 204, 0, ${alpha})`;
-      traceCtx.shadowColor = 'rgba(255, 204, 0, 0.6)';
-      traceCtx.shadowBlur = 6 * alpha;
-
-      traceCtx.beginPath();
-      for(let i = 0; i < numSamples - trigOffsetIndex; i++){
-        const sampleIdx = i + trigOffsetIndex;
-        const x = (i / (numSamples - 1)) * width;
-        const v = ch1Buffer[sampleIdx];
-        const y = centerY - ((v / voltDiv1) + ScopeState.ch1Pos) * pixelsPerDivY;
+    traceCtx.beginPath();
+    geom.forEach(stroke => {
+      for(let i = 0; i < stroke.length; i++){
+        const proj = project3D(stroke[i], 25, autoRotY, 0);
+        const x = centerX + (proj.x * 2.2 + ScopeState.hPos) * pixelsPerDivX;
+        const y = centerY - (proj.y * 2.2 + ScopeState.ch1Pos) * pixelsPerDivY;
         if(i === 0) traceCtx.moveTo(x, y); else traceCtx.lineTo(x, y);
       }
-      traceCtx.stroke();
+    });
+    traceCtx.stroke();
+  } else {
+    // STANDARD Y-T AND X-Y SIGNAL SAMPLING
+    const timeDiv = ScopeState.timeDivs[ScopeState.timeDivIdx];
+    const totalTimeWindow = timeDiv * GRID_COLS;
+    const numSamples = 600;
+    const dt = totalTimeWindow / numSamples;
 
-      // DRAW CHANNEL 2 (CYAN)
-      traceCtx.strokeStyle = `rgba(0, 204, 255, ${alpha})`;
-      traceCtx.shadowColor = 'rgba(0, 204, 255, 0.6)';
-      traceCtx.shadowBlur = 6 * alpha;
+    const ch1Buffer = new Float32Array(numSamples);
+    const ch2Buffer = new Float32Array(numSamples);
+    const timeOffset = ScopeState.hPos * timeDiv;
 
-      traceCtx.beginPath();
-      for(let i = 0; i < numSamples - trigOffsetIndex; i++){
-        const sampleIdx = i + trigOffsetIndex;
-        const x = (i / (numSamples - 1)) * width;
-        const v = ch2Buffer[sampleIdx];
-        const y = centerY - ((v / voltDiv2) + ScopeState.ch2Pos) * pixelsPerDivY;
-        if(i === 0) traceCtx.moveTo(x, y); else traceCtx.lineTo(x, y);
-      }
-      traceCtx.stroke();
+    for(let i = 0; i < numSamples; i++){
+      const t = sampleTime + i * dt + timeOffset;
+      ch1Buffer[i] = processCoupling(generateRawSignal(ScopeState.ch1Signal, t, 1), ScopeState.ch1Coupling);
+      ch2Buffer[i] = processCoupling(generateRawSignal(ScopeState.ch2Signal, t, 2), ScopeState.ch2Coupling);
+    }
+
+    let trigOffsetIndex = findTriggerIndex(ch1Buffer, ScopeState.trigLevel, ScopeState.trigSlope);
+
+    const trigLed = document.getElementById('trigLed');
+    const trigStatus = document.getElementById('trigStatus');
+
+    if(trigOffsetIndex !== -1){
+      ScopeState.isTriggered = true;
+      trigLed.className = 'led green';
+      trigStatus.textContent = "TRIG'D";
     } else {
-      // X-Y VECTOR / LISSAJOUS DISPLAY MODE (PHOSPHOR GREEN)
-      traceCtx.strokeStyle = `rgba(51, 255, 119, ${alpha})`;
-      traceCtx.shadowColor = 'rgba(51, 255, 119, 0.8)';
-      traceCtx.shadowBlur = 8 * alpha;
-
-      traceCtx.beginPath();
-      for(let i = 0; i < numSamples; i++){
-        const vx = ch1Buffer[i];
-        const vy = ch2Buffer[i];
-        const x = centerX + ((vx / voltDiv1) + ScopeState.hPos) * pixelsPerDivX;
-        const y = centerY - ((vy / voltDiv2) + ScopeState.ch1Pos) * pixelsPerDivY;
-        if(i === 0) traceCtx.moveTo(x, y); else traceCtx.lineTo(x, y);
+      ScopeState.isTriggered = false;
+      if(ScopeState.trigMode === 'NORM'){
+        trigLed.className = 'led red';
+        trigStatus.textContent = 'WAIT';
+      } else {
+        trigLed.className = 'led green';
+        trigStatus.textContent = 'AUTO';
+        trigOffsetIndex = 0;
       }
-      traceCtx.stroke();
+    }
+
+    if(ScopeState.trigMode !== 'NORM' || ScopeState.isTriggered){
+      const voltDiv1 = ScopeState.voltsDivs[ScopeState.ch1VoltsIdx];
+      const voltDiv2 = ScopeState.voltsDivs[ScopeState.ch2VoltsIdx];
+
+      traceCtx.lineWidth = 2.0;
+
+      if(ScopeState.displayMode === 'YT'){
+        // CHANNEL 1 (YELLOW)
+        traceCtx.strokeStyle = `rgba(255, 204, 0, ${alpha})`;
+        traceCtx.shadowColor = 'rgba(255, 204, 0, 0.6)';
+        traceCtx.shadowBlur = 6 * alpha;
+
+        traceCtx.beginPath();
+        for(let i = 0; i < numSamples - trigOffsetIndex; i++){
+          const sampleIdx = i + trigOffsetIndex;
+          const x = (i / (numSamples - 1)) * width;
+          const v = ch1Buffer[sampleIdx];
+          const y = centerY - ((v / voltDiv1) + ScopeState.ch1Pos) * pixelsPerDivY;
+          if(i === 0) traceCtx.moveTo(x, y); else traceCtx.lineTo(x, y);
+        }
+        traceCtx.stroke();
+
+        // CHANNEL 2 (CYAN)
+        traceCtx.strokeStyle = `rgba(0, 204, 255, ${alpha})`;
+        traceCtx.shadowColor = 'rgba(0, 204, 255, 0.6)';
+        traceCtx.shadowBlur = 6 * alpha;
+
+        traceCtx.beginPath();
+        for(let i = 0; i < numSamples - trigOffsetIndex; i++){
+          const sampleIdx = i + trigOffsetIndex;
+          const x = (i / (numSamples - 1)) * width;
+          const v = ch2Buffer[sampleIdx];
+          const y = centerY - ((v / voltDiv2) + ScopeState.ch2Pos) * pixelsPerDivY;
+          if(i === 0) traceCtx.moveTo(x, y); else traceCtx.lineTo(x, y);
+        }
+        traceCtx.stroke();
+      } else {
+        // X-Y VECTOR MODE (PHOSPHOR GREEN)
+        traceCtx.strokeStyle = `rgba(51, 255, 119, ${alpha})`;
+        traceCtx.shadowColor = 'rgba(51, 255, 119, 0.8)';
+        traceCtx.shadowBlur = 8 * alpha;
+
+        traceCtx.beginPath();
+        for(let i = 0; i < numSamples; i++){
+          const vx = ch1Buffer[i];
+          const vy = ch2Buffer[i];
+          const x = centerX + ((vx / voltDiv1) + ScopeState.hPos) * pixelsPerDivX;
+          const y = centerY - ((vy / voltDiv2) + ScopeState.ch1Pos) * pixelsPerDivY;
+          if(i === 0) traceCtx.moveTo(x, y); else traceCtx.lineTo(x, y);
+        }
+        traceCtx.stroke();
+      }
     }
   }
 
-  // Composite CRT Trace on Reticle Background
   drawReticle();
   ctx.drawImage(traceCanvas, 0, 0, width, height);
 }
@@ -675,6 +908,11 @@ setupKnob('knobTrigLevel', delta => {
   document.getElementById('valTrigLevel').textContent = ScopeState.trigLevel.toFixed(1) + 'V';
 });
 
+setupKnob('knobHoldOff', delta => {
+  ScopeState.holdOff = Math.max(0, ScopeState.holdOff + delta * 0.1);
+  document.getElementById('valHoldOff').textContent = ScopeState.holdOff.toFixed(1) + 'ms';
+});
+
 setupKnob('knobIntensity', delta => {
   ScopeState.intensity = Math.max(0.1, Math.min(1.0, ScopeState.intensity + delta * 0.01));
   document.getElementById('valIntensity').textContent = Math.round(ScopeState.intensity * 100) + '%';
@@ -690,10 +928,32 @@ document.getElementById('btnCh1DC').addEventListener('click', () => { ScopeState
 document.getElementById('btnCh1AC').addEventListener('click', () => { ScopeState.ch1Coupling = 'AC'; updateCouplingBtns(); });
 document.getElementById('btnCh1GND').addEventListener('click', () => { ScopeState.ch1Coupling = 'GND'; updateCouplingBtns(); });
 
+document.getElementById('btnCh2DC').addEventListener('click', () => { ScopeState.ch2Coupling = 'DC'; updateCouplingBtns(); });
+document.getElementById('btnCh2AC').addEventListener('click', () => { ScopeState.ch2Coupling = 'AC'; updateCouplingBtns(); });
+document.getElementById('btnCh2GND').addEventListener('click', () => { ScopeState.ch2Coupling = 'GND'; updateCouplingBtns(); });
+
 function updateCouplingBtns(){
   document.getElementById('btnCh1DC').className = 'btn ' + (ScopeState.ch1Coupling === 'DC' ? 'active' : '');
   document.getElementById('btnCh1AC').className = 'btn ' + (ScopeState.ch1Coupling === 'AC' ? 'active' : '');
   document.getElementById('btnCh1GND').className = 'btn ' + (ScopeState.ch1Coupling === 'GND' ? 'active' : '');
+  document.getElementById('btnCh2DC').className = 'btn ' + (ScopeState.ch2Coupling === 'DC' ? 'active' : '');
+  document.getElementById('btnCh2AC').className = 'btn ' + (ScopeState.ch2Coupling === 'AC' ? 'active' : '');
+  document.getElementById('btnCh2GND').className = 'btn ' + (ScopeState.ch2Coupling === 'GND' ? 'active' : '');
+}
+
+// TRIGGER MODE BUTTONS
+document.getElementById('btnTrigAuto').addEventListener('click', () => { ScopeState.trigMode = 'AUTO'; updateTrigBtns(); });
+document.getElementById('btnTrigNorm').addEventListener('click', () => { ScopeState.trigMode = 'NORM'; updateTrigBtns(); });
+document.getElementById('btnTrigSingle').addEventListener('click', () => { ScopeState.trigMode = 'SINGLE'; updateTrigBtns(); });
+document.getElementById('btnTrigSlopePos').addEventListener('click', () => { ScopeState.trigSlope = 1; updateTrigBtns(); });
+document.getElementById('btnTrigSlopeNeg').addEventListener('click', () => { ScopeState.trigSlope = -1; updateTrigBtns(); });
+
+function updateTrigBtns(){
+  document.getElementById('btnTrigAuto').className = 'btn ' + (ScopeState.trigMode === 'AUTO' ? 'active' : '');
+  document.getElementById('btnTrigNorm').className = 'btn ' + (ScopeState.trigMode === 'NORM' ? 'active' : '');
+  document.getElementById('btnTrigSingle').className = 'btn ' + (ScopeState.trigMode === 'SINGLE' ? 'active' : '');
+  document.getElementById('btnTrigSlopePos').className = 'btn ' + (ScopeState.trigSlope === 1 ? 'active' : '');
+  document.getElementById('btnTrigSlopeNeg').className = 'btn ' + (ScopeState.trigSlope === -1 ? 'active' : '');
 }
 
 // SIGNALS & DISPLAY MODES
