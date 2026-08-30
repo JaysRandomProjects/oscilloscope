@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>Virtual Oscilloscope</title>
+<title>Virtual Oscilloscope/title>
 
 <style>
 :root{
@@ -685,7 +685,7 @@ footer{
   <footer>SCOPE-1 HD · Synchronized Oscilloscope & Vector Synth</footer>
 </div>
 
-<audio id="audioElement" style="display:none"></audio>
+<audio id="audioElement" style="display:none" crossorigin="anonymous"></audio>
 
 <script>
 (function(){
@@ -1018,12 +1018,15 @@ function samplePointAt(t){
   }
 }
 
-/* REAL-TIME AUDIO SYNTHESIZER */
+/* REAL-TIME AUDIO SYNTHESIZER & ACCURATE ANALYZER */
 let audioCtx = null;
 let scriptNode = null;
 let masterGain = null;
-let audioAnalyser = null;
+
+let analyserL = null;
+let analyserR = null;
 let audioSourceNode = null;
+let splitterNode = null;
 
 const audioElement = document.getElementById('audioElement');
 
@@ -1036,13 +1039,21 @@ function initAudioEngine(){
   masterGain = audioCtx.createGain();
   masterGain.gain.setValueAtTime(0, audioCtx.currentTime);
 
-  audioAnalyser = audioCtx.createAnalyser();
-  audioAnalyser.fftSize = 2048;
+  analyserL = audioCtx.createAnalyser();
+  analyserR = audioCtx.createAnalyser();
+  analyserL.fftSize = 4096;
+  analyserR.fftSize = 4096;
+  analyserL.smoothingTimeConstant = 0.2;
+  analyserR.smoothingTimeConstant = 0.2;
+
+  splitterNode = audioCtx.createChannelSplitter(2);
 
   try {
     audioSourceNode = audioCtx.createMediaElementSource(audioElement);
-    audioSourceNode.connect(audioAnalyser);
-    audioAnalyser.connect(audioCtx.destination);
+    audioSourceNode.connect(splitterNode);
+    splitterNode.connect(analyserL, 0);
+    splitterNode.connect(analyserR, 1);
+    audioSourceNode.connect(audioCtx.destination);
   } catch(e){}
 
   let phase = 0;
@@ -1103,6 +1114,7 @@ function loadAudioFile(file){
 
 document.getElementById('btnPlay').addEventListener('click', () => {
   initAudioEngine();
+  if(audioCtx.state === 'suspended') audioCtx.resume();
   audioElement.play();
 });
 
@@ -1249,23 +1261,26 @@ function render(){
   const baseRadius = Math.min(cssW, cssH) * 0.35;
 
   ctx.beginPath();
-  if(state.mode === 'audio' && audioAnalyser){
-    const timeData = new Uint8Array(audioAnalyser.frequencyBinCount);
-    audioAnalyser.getByteTimeDomainData(timeData);
+  if(state.mode === 'audio' && analyserL && analyserR){
+    const timeDataL = new Uint8Array(analyserL.frequencyBinCount);
+    const timeDataR = new Uint8Array(analyserR.frequencyBinCount);
+    analyserL.getByteTimeDomainData(timeDataL);
+    analyserR.getByteTimeDomainData(timeDataR);
 
     if(state.audioDimension === '2d'){
-      for(let i = 0; i < timeData.length - 1; i++){
-        const xVal = (timeData[i] - 128) / 128;
-        const yVal = (timeData[i + 1] - 128) / 128;
+      const len = Math.min(timeDataL.length, timeDataR.length);
+      for(let i = 0; i < len; i++){
+        const xVal = (timeDataL[i] - 128) / 128;
+        const yVal = (timeDataR[i] - 128) / 128;
         const screenX = cx + xVal * baseRadius * state.scale;
         const screenY = cy - yVal * baseRadius * state.scale;
         if(i === 0) ctx.moveTo(screenX, screenY);
         else ctx.lineTo(screenX, screenY);
       }
     } else {
-      for(let i = 0; i < timeData.length; i++){
-        const x = (i / timeData.length - 0.5) * cssW * 0.9;
-        const y = ((timeData[i] - 128) / 128) * baseRadius * state.scale;
+      for(let i = 0; i < timeDataL.length; i++){
+        const x = (i / timeDataL.length - 0.5) * cssW * 0.9;
+        const y = ((timeDataL[i] - 128) / 128) * baseRadius * state.scale;
         const screenX = cx + x;
         const screenY = cy - y;
         if(i === 0) ctx.moveTo(screenX, screenY);
