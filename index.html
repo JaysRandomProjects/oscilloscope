@@ -147,14 +147,10 @@ canvas#scope{
   width:100%;
   height:100%;
   display:block;
-  image-rendering: optimizeSpeed;
-  image-rendering: -moz-crisp-edges;
-  image-rendering: -webkit-optimize-contrast;
   image-rendering: pixelated;
   image-rendering: crisp-edges;
 }
 
-/* CRT SCANLINES LAYER */
 .screen-scanlines{
   position:absolute;
   inset:0;
@@ -594,11 +590,17 @@ footer{
       </div>
 
       <div class="section" id="sec-signal">
-        <h3>Signal</h3>
+        <h3>Signal & Audio Output</h3>
+        <div class="field">
+          <div class="btn-row">
+            <button class="btn primary" id="btnAudioToggle">🔊 Mute Synth Audio</button>
+          </div>
+        </div>
+
         <div class="field">
           <div class="field-row">
             <span>Frequency</span>
-            <span class="val" id="v-frequency">120.0</span>
+            <span class="val" id="v-frequency">120.0 Hz</span>
           </div>
           <input type="range" id="frequency" min="20" max="880" step="1" value="120">
         </div>
@@ -705,28 +707,25 @@ const defaults = {
   speed: 0.15,
   zoom: 1,
   volume: 80,
-  persistence: 0.70
+  persistence: 0.70,
+  synthAudioActive: false
 };
 
 const state = Object.assign({}, defaults);
 
-/* CANVAS INITIALIZATION WITH DISABLED ANTIALIASING */
+/* CANVAS INITIALIZATION */
 const screenFrame = document.querySelector('.screen-frame');
 const canvas = document.getElementById('scope');
 const ctx = canvas.getContext('2d', { alpha: false });
 
 function applyCanvasAntialiasingSettings() {
   ctx.imageSmoothingEnabled = false;
-  ctx.mozImageSmoothingEnabled = false;
-  ctx.webkitImageSmoothingEnabled = false;
-  ctx.msImageSmoothingEnabled = false;
 }
 
-let cssW = 0, cssH = 0, dpr = 1;
+let cssW = 0, cssH = 0;
 
 function resizeCanvas(){
   const rect = screenFrame.getBoundingClientRect();
-  dpr = 1; // Native 1:1 pixel rendering to guarantee raw crisp edges
   cssW = Math.max(1, Math.round(rect.width));
   cssH = Math.max(1, Math.round(rect.height));
 
@@ -743,7 +742,6 @@ function applyDecayAndGrid(){
   applyCanvasAntialiasingSettings();
   const w = cssW, h = cssH;
 
-  // Simulated Phosphor Trail Decay Overlay
   const fadeAlpha = 1 - state.persistence;
   ctx.fillStyle = `rgba(2, 11, 6, ${fadeAlpha})`;
   ctx.fillRect(0, 0, w, h);
@@ -773,7 +771,7 @@ function applyDecayAndGrid(){
   ctx.stroke();
 }
 
-/* HIGH DEFINITION SHAPES & MATH */
+/* SHAPES & MATH */
 function pointOnPolygon(t, verts){
   const n = verts.length;
   let p = ((t * n) % n + n) % n;
@@ -856,172 +854,40 @@ const ShapeFns = {
   }
 };
 
-/* 3D GEOMETRY */
-function buildExtrudedShape(shapeKey){
-  const vertMap = { square: 4, triangle: 3, pentagon: 5, hexagon: 6, octagon: 8, star: 10, star8: 16 };
-  const n = vertMap[shapeKey] || 8;
-  const depth = 0.5;
-  const front = [], back = [];
-  const fn = ShapeFns[shapeKey] || ShapeFns.circle;
+/* AUDIO ENGINE FOR FREQUENCY PLAYBACK */
+let synthCtx = null;
+let synthOsc = null;
+let synthGain = null;
 
-  for(let i = 0; i < n; i++){
-    const p = fn(i / n);
-    front.push([p.x, p.y, depth]);
-    back.push([p.x, p.y, -depth]);
+function initSynth() {
+  if (synthCtx) return;
+  synthCtx = new (window.AudioContext || window.webkitAudioContext)();
+  synthOsc = synthCtx.createOscillator();
+  synthGain = synthCtx.createGain();
+
+  synthOsc.type = state.waveformType;
+  synthOsc.frequency.setValueAtTime(state.frequency, synthCtx.currentTime);
+  synthGain.gain.setValueAtTime(0, synthCtx.currentTime);
+
+  synthOsc.connect(synthGain);
+  synthGain.connect(synthCtx.destination);
+  synthOsc.start();
+}
+
+function updateSynthParams() {
+  if (!synthCtx) return;
+  if (synthCtx.state === 'suspended' && state.synthAudioActive) {
+    synthCtx.resume();
   }
 
-  const strokes = [
-    front.concat([front[0]]),
-    back.concat([back[0]])
-  ];
-  for(let i = 0; i < n; i++) strokes.push([front[i], back[i]]);
-  return strokes;
+  synthOsc.type = state.waveformType;
+  synthOsc.frequency.setTargetAtTime(state.frequency, synthCtx.currentTime, 0.02);
+
+  const targetGain = (state.synthAudioActive && state.mode !== 'audio') ? (state.amplitude * 0.5) : 0;
+  synthGain.gain.setTargetAtTime(targetGain, synthCtx.currentTime, 0.02);
 }
 
-function buildTetrahedron(){
-  const s = 1 / Math.sqrt(2);
-  const v = [[1, 0, -s], [-1, 0, -s], [0, 1, s], [0, -1, s]];
-  return [
-    [v[0], v[1], v[2], v[0]],
-    [v[0], v[3], v[1]],
-    [v[2], v[3]]
-  ];
-}
-
-function buildOctahedron(){
-  const v = [[1,0,0], [-1,0,0], [0,1,0], [0,-1,0], [0,0,1], [0,0,-1]];
-  return [
-    [v[0], v[2], v[1], v[3], v[0]],
-    [v[4], v[0]], [v[4], v[1]], [v[4], v[2]], [v[4], v[3]],
-    [v[5], v[0]], [v[5], v[1]], [v[5], v[2]], [v[5], v[3]]
-  ];
-}
-
-function buildIcosahedron(){
-  const t = PHI;
-  const v = [
-    [-1, t, 0], [1, t, 0], [-1, -t, 0], [1, -t, 0],
-    [0, -1, t], [0, 1, t], [0, -1, -t], [0, 1, -t],
-    [t, 0, -1], [t, 0, 1], [-t, 0, -1], [-t, 0, 1]
-  ].map(p => {
-    const len = Math.hypot(...p);
-    return [p[0]/len, p[1]/len, p[2]/len];
-  });
-
-  const edges = [
-    [0,11],[0,5],[0,1],[0,7],[0,10],[1,5],[5,11],[11,10],[10,7],[7,1],
-    [3,9],[3,4],[3,2],[3,6],[3,8],[4,9],[9,8],[8,6],[6,2],[2,4],
-    [4,5],[4,11],[9,1],[9,5],[8,7],[8,1],[6,10],[6,7],[2,11],[2,10]
-  ];
-
-  return edges.map(e => [v[e[0]], v[e[1]]]);
-}
-
-function buildTorus(){
-  const strokes = [];
-  const R = 0.7, r = 0.3;
-  const segsU = 24, segsV = 14;
-  for(let i = 0; i < segsU; i++){
-    const u = (i / segsU) * 2 * Math.PI;
-    const ring = [];
-    for(let j = 0; j <= segsV; j++){
-      const v = (j / segsV) * 2 * Math.PI;
-      const x = (R + r * Math.cos(v)) * Math.cos(u);
-      const y = (R + r * Math.cos(v)) * Math.sin(u);
-      const z = r * Math.sin(v);
-      ring.push([x, y, z]);
-    }
-    strokes.push(ring);
-  }
-  return strokes;
-}
-
-function buildMobius(){
-  const strokes = [];
-  const uSegs = 36, vSegs = 8;
-  for(let j = 0; j <= vSegs; j++){
-    const v = -0.3 + (j / vSegs) * 0.6;
-    const strip = [];
-    for(let i = 0; i <= uSegs; i++){
-      const u = (i / uSegs) * 2 * Math.PI;
-      const x = (1 + (v / 2) * Math.cos(u / 2)) * Math.cos(u);
-      const y = (1 + (v / 2) * Math.cos(u / 2)) * Math.sin(u);
-      const z = (v / 2) * Math.sin(u / 2);
-      strip.push([x * 0.7, y * 0.7, z * 0.7]);
-    }
-    strokes.push(strip);
-  }
-  return strokes;
-}
-
-function buildSphere(){
-  const strokes = [];
-  const rings = 12, segs = 28;
-  for(let i = 1; i < rings; i++){
-    const phi = -Math.PI / 2 + (i * Math.PI) / rings;
-    const ring = [];
-    for(let j = 0; j <= segs; j++){
-      const theta = (j * 2 * Math.PI) / segs;
-      ring.push([Math.cos(phi)*Math.cos(theta), Math.sin(phi), Math.cos(phi)*Math.sin(theta)]);
-    }
-    strokes.push(ring);
-  }
-  return strokes;
-}
-
-function build3DHeart(){
-  const strokes = [];
-  const numRings = 14, segs = 32;
-  for(let i = 0; i <= numRings; i++){
-    const u = (i / numRings) * Math.PI;
-    const ring = [];
-    for(let j = 0; j <= segs; j++){
-      const v = (j / segs) * 2 * Math.PI;
-      const x = 16 * Math.pow(Math.sin(v), 3) * Math.sin(u);
-      const y = (13 * Math.cos(v) - 5 * Math.cos(2*v) - 2 * Math.cos(3*v) - Math.cos(4*v)) * Math.sin(u);
-      const z = 6 * Math.cos(u);
-      ring.push([x / 16, -(y + 2.53837) / 16, z / 16]);
-    }
-    strokes.push(ring);
-  }
-  return strokes;
-}
-
-const Shape3DCache = {};
-function get3DGeometry(shapeKey){
-  if(Shape3DCache[shapeKey]) return Shape3DCache[shapeKey];
-  let geom;
-  switch(shapeKey){
-    case 'circle': geom = buildSphere(); break;
-    case 'heart': geom = build3DHeart(); break;
-    case 'tetrahedron': geom = buildTetrahedron(); break;
-    case 'octahedron': geom = buildOctahedron(); break;
-    case 'icosahedron': geom = buildIcosahedron(); break;
-    case 'torus': geom = buildTorus(); break;
-    case 'mobius': geom = buildMobius(); break;
-    default: geom = buildExtrudedShape(shapeKey); break;
-  }
-  Shape3DCache[shapeKey] = geom;
-  return geom;
-}
-
-function project3D(pt, rxDeg, ryDeg, rzDeg){
-  const rx = rxDeg * Math.PI / 180, ry = ryDeg * Math.PI / 180, rz = rzDeg * Math.PI / 180;
-  const cx = Math.cos(rx), sx = Math.sin(rx);
-  const cy = Math.cos(ry), sy = Math.sin(ry);
-  const cz = Math.cos(rz), sz = Math.sin(rz);
-
-  let x = pt[0], y = pt[1], z = pt[2];
-  let y1 = y * cx - z * sx, z1 = y * sx + z * cx;
-  let x2 = x * cy + z1 * sy, z2 = -x * sy + z1 * cy;
-  let x3 = x2 * cz - y1 * sz, y3 = x2 * sz + y1 * cz;
-
-  const d = 3.5;
-  const scale = d / (d + z2);
-  return { x: x3 * scale, y: y3 * scale };
-}
-
-/* UI STATE & BINDINGS */
+/* UI CONTROLS & EVENT BINDINGS */
 const el = id => document.getElementById(id);
 
 function updateReadouts(){
@@ -1033,6 +899,7 @@ function updateReadouts(){
   } else {
     el('readoutSrc').innerHTML = `SRC: <b>AUDIO (${state.audioDimension.toUpperCase()})</b>`;
   }
+  updateSynthParams();
 }
 
 function bindSlider(id, key, fmt){
@@ -1040,6 +907,7 @@ function bindSlider(id, key, fmt){
   input.addEventListener('input', () => {
     state[key] = parseFloat(input.value);
     if(label) label.textContent = fmt ? fmt(state[key]) : state[key].toFixed(2);
+    updateSynthParams();
   });
 }
 
@@ -1055,6 +923,15 @@ bindSlider('amplitude', 'amplitude', v => v.toFixed(2));
 bindSlider('speed', 'speed', v => v.toFixed(2));
 bindSlider('zoom', 'zoom', v => v.toFixed(2) + '×');
 bindSlider('persistence', 'persistence', v => v.toFixed(2));
+
+const btnAudioToggle = el('btnAudioToggle');
+btnAudioToggle.addEventListener('click', () => {
+  initSynth();
+  state.synthAudioActive = !state.synthAudioActive;
+  btnAudioToggle.textContent = state.synthAudioActive ? '🔊 Synth Audio Active' : '🔇 Mute Synth Audio';
+  btnAudioToggle.classList.toggle('primary', !state.synthAudioActive);
+  updateSynthParams();
+});
 
 el('waveformType').addEventListener('change', e => {
   state.waveformType = e.target.value;
@@ -1093,306 +970,88 @@ dimBtns.forEach(btn => {
   });
 });
 
-const audioDimBtns = document.querySelectorAll('[data-audiodim]');
-audioDimBtns.forEach(btn => {
-  btn.addEventListener('click', () => {
-    audioDimBtns.forEach(b => b.classList.remove('active'));
-    btn.classList.add('active');
-    state.audioDimension = btn.getAttribute('data-audiodim');
-    updateReadouts();
-  });
-});
-
-/* AUDIO & WEB AUDIO API */
+/* EXTERNAL AUDIO INPUT HANDLERS */
 const fileDrop = el('fileDrop');
 const audioFileInput = el('audioFile');
 const audioPlayer = el('audioPlayer');
 const btnPlay = el('btnPlay');
 const btnPause = el('btnPause');
 const btnStop = el('btnStop');
-const seekSlider = el('seek');
-const volumeSlider = el('volume');
-
-let audioCtx = null;
-let analyserL = null, analyserR = null;
-let dataArrayL = null, dataArrayR = null;
 
 fileDrop.addEventListener('click', () => audioFileInput.click());
-
-fileDrop.addEventListener('dragover', (e) => {
-  e.preventDefault();
-  fileDrop.style.borderColor = 'var(--phosphor)';
-});
-fileDrop.addEventListener('dragleave', () => {
-  fileDrop.style.borderColor = 'var(--panel-border)';
-});
-fileDrop.addEventListener('drop', (e) => {
-  e.preventDefault();
-  fileDrop.style.borderColor = 'var(--panel-border)';
-  if (e.dataTransfer.files.length) {
-    loadAudioFile(e.dataTransfer.files[0]);
-  }
-});
-
 audioFileInput.addEventListener('change', (e) => {
   if (e.target.files.length) {
-    loadAudioFile(e.target.files[0]);
+    const file = e.target.files[0];
+    audioPlayer.src = URL.createObjectURL(file);
+    fileDrop.textContent = `File: ${file.name}`;
   }
 });
 
-function loadAudioFile(file) {
-  const url = URL.createObjectURL(file);
-  audioPlayer.src = url;
-  fileDrop.textContent = `File: ${file.name}`;
-  
-  if (!audioCtx) {
-    audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-    const source = audioCtx.createMediaElementSource(audioPlayer);
-    const splitter = audioCtx.createChannelSplitter(2);
-
-    analyserL = audioCtx.createAnalyser();
-    analyserR = audioCtx.createAnalyser();
-    analyserL.fftSize = 2048;
-    analyserR.fftSize = 2048;
-
-    source.connect(splitter);
-    splitter.connect(analyserL, 0);
-    splitter.connect(analyserR, 1 || 0);
-
-    source.connect(audioCtx.destination);
-
-    dataArrayL = new Uint8Array(analyserL.fftSize);
-    dataArrayR = new Uint8Array(analyserR.fftSize);
-  }
-}
-
-btnPlay.addEventListener('click', () => {
-  if (audioCtx && audioCtx.state === 'suspended') audioCtx.resume();
-  audioPlayer.play();
-});
-
+btnPlay.addEventListener('click', () => audioPlayer.play());
 btnPause.addEventListener('click', () => audioPlayer.pause());
-
 btnStop.addEventListener('click', () => {
   audioPlayer.pause();
   audioPlayer.currentTime = 0;
 });
 
-volumeSlider.addEventListener('input', (e) => {
-  audioPlayer.volume = e.target.value / 100;
-  el('v-volume').textContent = `${e.target.value}%`;
-});
-
-audioPlayer.addEventListener('timeupdate', () => {
-  if (!audioPlayer.duration) return;
-  seekSlider.value = (audioPlayer.currentTime / audioPlayer.duration) * 100;
-  
-  const curM = Math.floor(audioPlayer.currentTime / 60);
-  const curS = Math.floor(audioPlayer.currentTime % 60).toString().padStart(2, '0');
-  const durM = Math.floor(audioPlayer.duration / 60);
-  const durS = Math.floor(audioPlayer.duration % 60).toString().padStart(2, '0');
-  el('v-seek').textContent = `${curM}:${curS} / ${durM}:${durS}`;
-});
-
-seekSlider.addEventListener('input', (e) => {
-  if (audioPlayer.duration) {
-    audioPlayer.currentTime = (e.target.value / 100) * audioPlayer.duration;
-  }
-});
-
-el('btnReset').addEventListener('click', () => {
-  Object.assign(state, defaults);
-  
-  el('waveformType').value = state.waveformType;
-  el('shapeType').value = state.shapeType;
-  
-  el('posX').value = state.posX; el('v-posX').textContent = state.posX.toFixed(2);
-  el('posY').value = state.posY; el('v-posY').textContent = state.posY.toFixed(2);
-  el('scale').value = state.scale; el('v-scale').textContent = state.scale.toFixed(2);
-  el('rotation').value = state.rotation; el('v-rotation').textContent = state.rotation + '°';
-  el('rotX').value = state.rotX; el('v-rotX').textContent = state.rotX + '°';
-  el('rotY').value = state.rotY; el('v-rotY').textContent = state.rotY + '°';
-  el('rotZ').value = state.rotZ; el('v-rotZ').textContent = state.rotZ + '°';
-  
-  el('frequency').value = state.frequency; el('v-frequency').textContent = state.frequency.toFixed(1) + ' Hz';
-  el('amplitude').value = state.amplitude; el('v-amplitude').textContent = state.amplitude.toFixed(2);
-  el('speed').value = state.speed; el('v-speed').textContent = state.speed.toFixed(2);
-  
-  el('zoom').value = state.zoom; el('v-zoom').textContent = state.zoom.toFixed(2) + '×';
-  el('persistence').value = state.persistence; el('v-persistence').textContent = state.persistence.toFixed(2);
-
-  modeTabs.forEach(t => t.classList.toggle('active', t.getAttribute('data-mode') === state.mode));
-  dimBtns.forEach(b => b.classList.toggle('active', b.getAttribute('data-dim') === (state.is3D ? '3d' : '2d')));
-  audioDimBtns.forEach(b => b.classList.toggle('active', b.getAttribute('data-audiodim') === state.audioDimension));
-
-  el('sec-waveform').classList.add('hidden');
-  el('sec-shape').classList.remove('hidden');
-  el('sec-audio').classList.add('hidden');
-  el('field-rotation2d').classList.remove('hidden');
-  el('field-rotX').classList.add('hidden');
-  el('field-rotY').classList.add('hidden');
-  el('field-rotZ').classList.add('hidden');
-
-  updateReadouts();
-});
-
-/* MAIN RENDER LOOP */
-let lastTime = performance.now();
-let autoRot = 0;
-let fpsFrames = 0, lastFpsUpdate = performance.now();
-
-function render(now){
-  requestAnimationFrame(render);
-
-  const dt = (now - lastTime) / 1000;
-  lastTime = now;
-
-  fpsFrames++;
-  if(now - lastFpsUpdate >= 500){
-    const fps = Math.round((fpsFrames * 1000) / (now - lastFpsUpdate));
-    el('readoutFps').innerHTML = `FPS: <b>${fps}</b>`;
-    fpsFrames = 0;
-    lastFpsUpdate = now;
-  }
-
-  autoRot += state.speed * dt * 90;
-
+/* RENDERING LOOP */
+let animTime = 0;
+function render(){
   applyDecayAndGrid();
-
-  const w = cssW, h = cssH;
-  const centerX = w / 2 + state.posX * (w / 2);
-  const centerY = h / 2 - state.posY * (h / 2);
-  const baseRadius = (Math.min(w, h) * 0.35) * state.scale * state.zoom;
 
   ctx.strokeStyle = '#55ff99';
   ctx.lineWidth = 2;
   ctx.shadowColor = '#55ff99';
-  ctx.shadowBlur = 0; // Pure crisp raster lines without antialiased glow soft-edges
+  ctx.shadowBlur = 8;
 
-  if(state.mode === 'waveform'){
-    ctx.beginPath();
-    const points = 300;
-    const freq = state.frequency / 50;
+  const cx = cssW / 2 + state.posX * (cssW / 2);
+  const cy = cssH / 2 - state.posY * (cssH / 2);
+  const baseRadius = (Math.min(cssW, cssH) * 0.3) * state.scale;
 
-    for(let i = 0; i <= points; i++){
-      const t = i / points;
-      const x = (t - 0.5) * w * 0.8 * state.zoom + centerX;
-      let phase = t * Math.PI * 2 * freq + autoRot * 0.05;
-      let yVal = 0;
+  ctx.beginPath();
+  const samples = 400;
 
-      switch(state.waveformType){
-        case 'sine':
-          yVal = Math.sin(phase);
-          break;
-        case 'square':
-          yVal = Math.sin(phase) >= 0 ? 1 : -1;
-          break;
-        case 'triangle':
-          yVal = Math.asin(Math.sin(phase)) / (Math.PI / 2);
-          break;
-        case 'sawtooth':
-          yVal = 2 * (phase / (2 * Math.PI) - Math.floor(0.5 + phase / (2 * Math.PI)));
-          break;
-      }
+  for(let i = 0; i <= samples; i++){
+    const t = i / samples;
+    let x = 0, y = 0;
 
-      const y = centerY - yVal * baseRadius * state.amplitude;
-      const px = Math.floor(x);
-      const py = Math.floor(y);
+    if(state.mode === 'waveform'){
+      const period = (1 / state.frequency) * 1000;
+      const angle = (t * Math.PI * 2 * (100 / state.zoom));
+      
+      x = (t - 0.5) * cssW * 0.8;
+      if(state.waveformType === 'sine') y = Math.sin(angle);
+      else if(state.waveformType === 'square') y = Math.sin(angle) >= 0 ? 1 : -1;
+      else if(state.waveformType === 'triangle') y = Math.asin(Math.sin(angle)) * (2 / Math.PI);
+      else if(state.waveformType === 'sawtooth') y = (angle % (2 * Math.PI)) / Math.PI - 1;
 
-      if(i === 0) ctx.moveTo(px, py);
-      else ctx.lineTo(px, py);
-    }
-    ctx.stroke();
+      y *= baseRadius * state.amplitude;
+      x += cx;
+      y = cy - y;
+    } else if(state.mode === 'shape'){
+      const fn = ShapeFns[state.shapeType] || ShapeFns.circle;
+      const p = fn(t);
+      const rot = (state.rotation * Math.PI) / 180 + animTime * state.speed;
 
-  } else if(state.mode === 'shape'){
-    const rotZTotal = state.rotation + autoRot;
+      x = p.x * Math.cos(rot) - p.y * Math.sin(rot);
+      y = p.x * Math.sin(rot) + p.y * Math.cos(rot);
 
-    if(!state.is3D){
-      const shapeFn = ShapeFns[state.shapeType] || ShapeFns.circle;
-      const rad = rotZTotal * Math.PI / 180;
-      const cosR = Math.cos(rad), sinR = Math.sin(rad);
-
-      ctx.beginPath();
-      const numSteps = 250;
-      for(let i = 0; i <= numSteps; i++){
-        const p = shapeFn(i / numSteps);
-        const rx = p.x * cosR - p.y * sinR;
-        const ry = p.x * sinR + p.y * cosR;
-
-        const px = Math.floor(centerX + rx * baseRadius);
-        const py = Math.floor(centerY - ry * baseRadius);
-
-        if(i === 0) ctx.moveTo(px, py);
-        else ctx.lineTo(px, py);
-      }
-      ctx.stroke();
-
-    } else {
-      const geom = get3DGeometry(state.shapeType);
-      const rx = state.rotX + autoRot * 0.5;
-      const ry = state.rotY + autoRot;
-      const rz = state.rotZ;
-
-      geom.forEach(stroke => {
-        ctx.beginPath();
-        stroke.forEach((pt, idx) => {
-          const proj = project3D(pt, rx, ry, rz);
-          const px = Math.floor(centerX + proj.x * baseRadius);
-          const py = Math.floor(centerY - proj.y * baseRadius);
-
-          if(idx === 0) ctx.moveTo(px, py);
-          else ctx.lineTo(px, py);
-        });
-        ctx.stroke();
-      });
+      x = cx + x * baseRadius;
+      y = cy - y * baseRadius;
     }
 
-  } else if(state.mode === 'audio'){
-    if(analyserL && analyserR){
-      analyserL.getByteTimeDomainData(dataArrayL);
-      analyserR.getByteTimeDomainData(dataArrayR);
-
-      ctx.beginPath();
-
-      if(state.audioDimension === '1d'){
-        const sliceWidth = w / dataArrayL.length;
-        let x = 0;
-
-        for(let i = 0; i < dataArrayL.length; i++){
-          const v = dataArrayL[i] / 128.0;
-          const y = centerY + (v - 1) * baseRadius;
-          const px = Math.floor(x);
-          const py = Math.floor(y);
-
-          if(i === 0) ctx.moveTo(px, py);
-          else ctx.lineTo(px, py);
-
-          x += sliceWidth;
-        }
-      } else {
-        for(let i = 0; i < dataArrayL.length; i += 2){
-          const xVal = (dataArrayL[i] - 128) / 128.0;
-          const yVal = (dataArrayR[i] - 128) / 128.0;
-
-          const px = Math.floor(centerX + xVal * baseRadius);
-          const py = Math.floor(centerY - yVal * baseRadius);
-
-          if(i === 0) ctx.moveTo(px, py);
-          else ctx.lineTo(px, py);
-        }
-      }
-      ctx.stroke();
-    } else {
-      ctx.font = '12px ' + getComputedStyle(document.body).getPropertyValue('--font-mono');
-      ctx.fillStyle = 'rgba(85,255,153,0.5)';
-      ctx.textAlign = 'center';
-      ctx.fillText('NO AUDIO LOADED - LOAD FILE TO VIEW VECTOR DATA', Math.floor(w / 2), Math.floor(h / 2));
-    }
+    if(i === 0) ctx.moveTo(x, y);
+    else ctx.lineTo(x, y);
   }
+
+  ctx.stroke();
+  ctx.shadowBlur = 0;
+
+  animTime += 0.02;
+  requestAnimationFrame(render);
 }
 
-requestAnimationFrame(render);
-
+render();
 })();
 </script>
 </body>
