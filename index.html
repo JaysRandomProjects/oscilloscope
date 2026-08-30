@@ -1,9 +1,11 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+
 <title>Virtual Oscilloscope</title>
+
 <style>
 :root{
   --bezel-dark:#1a1c1a;
@@ -22,14 +24,19 @@
   --font-mono:ui-monospace,"SF Mono","Consolas","Roboto Mono",monospace;
   --font-ui:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
 }
+
 *{box-sizing:border-box;}
+
 html,body{
-  margin:0;padding:0;height:100%;
+  margin:0;
+  padding:0;
+  height:100%;
   background:radial-gradient(ellipse at 50% -10%,#2b2f31 0%,#101213 55%,#0a0b0b 100%);
   color:var(--text-main);
   font-family:var(--font-ui);
   -webkit-tap-highlight-color:transparent;
 }
+
 .app{
   min-height:100%;
   display:flex;
@@ -38,239 +45,478 @@ html,body{
   padding:16px;
   gap:14px;
 }
+
 .title-row{
-  display:flex; align-items:baseline; gap:10px;
+  display:flex;
+  align-items:baseline;
+  gap:10px;
   color:var(--text-dim);
   font-family:var(--font-mono);
-  letter-spacing:2px; font-size:12px; text-transform:uppercase;
+  letter-spacing:2px;
+  font-size:12px;
+  text-transform:uppercase;
 }
+
 .title-row .brand{
-  color:var(--phosphor); font-weight:700; font-size:14px;
+  color:var(--phosphor);
+  font-weight:700;
+  font-size:14px;
   text-shadow:0 0 8px rgba(77,255,160,.55);
 }
+
 .instrument{
-  width:100%; max-width:1180px;
+  width:100%;
+  max-width:1180px;
   background:linear-gradient(180deg,var(--bezel-light) 0%,var(--bezel-mid) 6%,var(--bezel-dark) 100%);
-  border-radius:18px; padding:16px;
-  box-shadow:0 30px 60px rgba(0,0,0,.55),
-             inset 0 1px 0 rgba(255,255,255,.06),
-             inset 0 -2px 6px rgba(0,0,0,.6);
-  display:grid; grid-template-columns:minmax(0,1fr) 300px; gap:14px;
+  border-radius:18px;
+  padding:16px;
+  box-shadow:
+    0 30px 60px rgba(0,0,0,.55),
+    inset 0 1px 0 rgba(255,255,255,.06),
+    inset 0 -2px 6px rgba(0,0,0,.6);
+  display:grid;
+  grid-template-columns:minmax(0,1fr) 300px;
+  gap:14px;
 }
-@media(max-width:880px){ .instrument{grid-template-columns:1fr;} }
+
+@media(max-width:880px){
+  .instrument{grid-template-columns:1fr;}
+}
+
 .screen-wrap{
   background:linear-gradient(180deg,#111 0%,#0c0c0c 100%);
-  border-radius:12px; padding:14px;
-  display:flex; flex-direction:column; gap:10px;
-  border:1px solid #000; box-shadow: inset 0 2px 10px rgba(0,0,0,.7);
+  border-radius:12px;
+  padding:14px;
+  display:flex;
+  flex-direction:column;
+  gap:10px;
+  border:1px solid #000;
+  box-shadow:inset 0 2px 10px rgba(0,0,0,.7);
 }
+
 .screen-topbar{
-  display:flex; align-items:center; justify-content:space-between;
-  font-family:var(--font-mono); font-size:11px; color:var(--text-dim);
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  font-family:var(--font-mono);
+  font-size:11px;
+  color:var(--text-dim);
   padding:0 2px;
 }
+
 .status-dot{
-  display:inline-block; width:8px; height:8px; border-radius:50%;
-  background:#3a4038; margin-right:6px;
-  vertical-align:middle; box-shadow:inset 0 0 2px rgba(0,0,0,.6);
+  display:inline-block;
+  width:8px;
+  height:8px;
+  border-radius:50%;
+  background:#3a4038;
+  margin-right:6px;
+  vertical-align:middle;
+  box-shadow:inset 0 0 2px rgba(0,0,0,.6);
 }
+
 .status-dot.on{
-  background:var(--led-on); box-shadow:0 0 8px var(--led-on),0 0 2px var(--led-on);
+  background:var(--led-on);
+  box-shadow:0 0 8px var(--led-on),0 0 2px var(--led-on);
 }
+
 .readout-group{
-  display:flex; gap:14px; flex-wrap:wrap;
+  display:flex;
+  gap:14px;
+  flex-wrap:wrap;
 }
-.readout{color:var(--phosphor-dim);} 
-.readout b{color:var(--phosphor); font-weight:600;}
+
+.readout{color:var(--phosphor-dim);}
+.readout b{color:var(--phosphor);font-weight:600;}
+
 .screen-frame{
-  position:relative; width:100%; aspect-ratio:4/3;
-  background: radial-gradient(ellipse at 50% 40%,#0a2a1a 0%,var(--screen-bg) 70%);
-  border-radius:8px; border:2px solid var(--screen-border);
+  position:relative;
+  width:100%;
+  aspect-ratio:4 / 3;
+  background:
+    radial-gradient(ellipse at 50% 40%,#0a2a1a 0%,var(--screen-bg) 70%);
+  border-radius:8px;
+  border:2px solid var(--screen-border);
   overflow:hidden;
-  box-shadow: inset 0 0 40px rgba(0,0,0,.85),
-              inset 0 0 90px rgba(0,0,0,.6);
+  box-shadow:
+    inset 0 0 40px rgba(0,0,0,.85),
+    inset 0 0 90px rgba(0,0,0,.6);
 }
+
 canvas#scope{
-  position:absolute; top:0; left:0; width:100%; height:100%; display:block;
+  position:absolute;
+  top:0;
+  left:0;
+  width:100%;
+  height:100%;
+  display:block;
 }
+
 .screen-vignette{
-  position:absolute; inset:0; pointer-events:none;
+  position:absolute;
+  inset:0;
+  pointer-events:none;
   background:radial-gradient(ellipse at 50% 50%,transparent 55%,rgba(0,0,0,.55) 100%);
 }
+
 .screen-glass{
-  position:absolute; inset:0; pointer-events:none;
+  position:absolute;
+  inset:0;
+  pointer-events:none;
   background:linear-gradient(135deg,rgba(255,255,255,.05) 0%,transparent 30%);
 }
+
 .screen-footbar{
-  display:flex; justify-content:space-between; align-items:center;
-  font-family:var(--font-mono); font-size:10px; color:var(--text-dim);
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  font-family:var(--font-mono);
+  font-size:10px;
+  color:var(--text-dim);
   padding:0 2px;
 }
+
 .panel{
-  background:var(--panel-bg); border:1px solid var(--panel-border); border-radius:12px; padding:14px;
-  display:flex; flex-direction:column; gap:12px; max-height:none; overflow-y:auto;
+  background:var(--panel-bg);
+  border:1px solid var(--panel-border);
+  border-radius:12px;
+  padding:14px;
+  display:flex;
+  flex-direction:column;
+  gap:12px;
+  max-height:none;
+  overflow-y:auto;
 }
+
 .panel h3{
-  margin:0 0 2px 0; font-size:10px; letter-spacing:1.5px; text-transform:uppercase;
-  color:var(--text-dim); font-family:var(--font-mono);
-  border-bottom:1px solid var(--panel-border); padding-bottom:6px;
+  margin:0 0 2px 0;
+  font-size:10px;
+  letter-spacing:1.5px;
+  text-transform:uppercase;
+  color:var(--text-dim);
+  font-family:var(--font-mono);
+  border-bottom:1px solid var(--panel-border);
+  padding-bottom:6px;
 }
+
 .mode-tabs{
-  display:grid; grid-template-columns:repeat(3,1fr); gap:6px;
+  display:grid;
+  grid-template-columns:repeat(3,1fr);
+  gap:6px;
 }
+
 .mode-tab{
-  background:#181a1b; border:1px solid var(--panel-border); color:var(--text-dim);
-  font-family:var(--font-mono); font-size:11px; letter-spacing:.5px; padding:8px 4px;
-  border-radius:6px; cursor:pointer; text-align:center; transition:all .12s ease;
+  background:#181a1b;
+  border:1px solid var(--panel-border);
+  color:var(--text-dim);
+  font-family:var(--font-mono);
+  font-size:11px;
+  letter-spacing:.5px;
+  padding:8px 4px;
+  border-radius:6px;
+  cursor:pointer;
+  text-align:center;
+  transition:all .12s ease;
 }
+
 .mode-tab.active{
-  color:#04140c; background:var(--phosphor); border-color:var(--phosphor);
-  box-shadow:0 0 10px rgba(77,255,160,.5); font-weight:700;
+  color:#04140c;
+  background:var(--phosphor);
+  border-color:var(--phosphor);
+  box-shadow:0 0 10px rgba(77,255,160,.5);
+  font-weight:700;
 }
+
 .field{
-  display:flex; flex-direction:column; gap:4px;
+  display:flex;
+  flex-direction:column;
+  gap:4px;
 }
+
 .field-row{
-  display:flex; justify-content:space-between; align-items:baseline;
-  font-size:11px; color:var(--text-dim); font-family:var(--font-mono);
+  display:flex;
+  justify-content:space-between;
+  align-items:baseline;
+  font-size:11px;
+  color:var(--text-dim);
+  font-family:var(--font-mono);
 }
+
 .field-row .val{color:var(--phosphor);}
+
 select,input[type=range],input[type=text],input[type=file]{
   width:100%;
 }
+
 select{
-  background:#15171a; color:var(--text-main); border:1px solid var(--panel-border);
-  border-radius:6px; padding:7px 8px; font-family:var(--font-ui); font-size:12px;
+  background:#15171a;
+  color:var(--text-main);
+  border:1px solid var(--panel-border);
+  border-radius:6px;
+  padding:7px 8px;
+  font-family:var(--font-ui);
+  font-size:12px;
 }
+
 input[type=range]{
-  -webkit-appearance:none; appearance:none; height:4px; border-radius:2px; background:#15171a; border:1px solid #000; outline:none;
+  -webkit-appearance:none;
+  appearance:none;
+  height:4px;
+  border-radius:2px;
+  background:#15171a;
+  border:1px solid #000;
+  outline:none;
 }
+
 input[type=range]::-webkit-slider-thumb{
-  -webkit-appearance:none; appearance:none; width:16px; height:16px; border-radius:50%;
-  background:linear-gradient(180deg,#eee,#999); border:1px solid #000; box-shadow:0 0 4px rgba(0,0,0,.6); cursor:pointer; margin-top:-1px;
+  -webkit-appearance:none;
+  appearance:none;
+  width:16px;
+  height:16px;
+  border-radius:50%;
+  background:linear-gradient(180deg,#eee,#999);
+  border:1px solid #000;
+  box-shadow:0 0 4px rgba(0,0,0,.6);
+  cursor:pointer;
+  margin-top:-1px;
 }
+
 input[type=range]::-moz-range-thumb{
-  width:16px; height:16px; border-radius:50%;
-  background:linear-gradient(180deg,#eee,#999); border:1px solid #000; cursor:pointer;
+  width:16px;
+  height:16px;
+  border-radius:50%;
+  background:linear-gradient(180deg,#eee,#999);
+  border:1px solid #000;
+  cursor:pointer;
 }
+
 .toggle-row{
-  display:flex; gap:6px;
+  display:flex;
+  gap:6px;
 }
+
 .toggle-btn{
-  flex:1; background:#181a1b; border:1px solid var(--panel-border); color:var(--text-dim);
-  font-family:var(--font-mono); font-size:11px; padding:7px 4px; border-radius:6px; cursor:pointer; text-align:center;
+  flex:1;
+  background:#181a1b;
+  border:1px solid var(--panel-border);
+  color:var(--text-dim);
+  font-family:var(--font-mono);
+  font-size:11px;
+  padding:7px 4px;
+  border-radius:6px;
+  cursor:pointer;
+  text-align:center;
 }
+
 .toggle-btn.active{
-  color:#04140c; background:var(--accent); border-color:var(--accent); font-weight:700;
+  color:#04140c;
+  background:var(--accent);
+  border-color:var(--accent);
+  font-weight:700;
 }
+
 .btn-row{
-  display:flex; gap:6px; flex-wrap:wrap;
+  display:flex;
+  gap:6px;
+  flex-wrap:wrap;
 }
+
 .btn{
-  flex:1; min-width:60px; background:#181a1b; color:var(--text-main); border:1px solid var(--panel-border);
-  border-radius:6px; padding:9px 6px; font-family:var(--font-ui); font-size:12px; font-weight:600; cursor:pointer; transition:all .12s ease;
+  flex:1;
+  min-width:60px;
+  background:#181a1b;
+  color:var(--text-main);
+  border:1px solid var(--panel-border);
+  border-radius:6px;
+  padding:9px 6px;
+  font-family:var(--font-ui);
+  font-size:12px;
+  font-weight:600;
+  cursor:pointer;
+  transition:all .12s ease;
 }
+
 .btn:hover{
-  border-color:var(--phosphor); color:var(--phosphor);
+  border-color:var(--phosphor);
+  color:var(--phosphor);
 }
+
 .btn:active{
   transform:translateY(1px);
 }
+
 .btn.primary{
-  background:var(--phosphor-dim); border-color:var(--phosphor); color:#eafff2;
+  background:var(--phosphor-dim);
+  border-color:var(--phosphor);
+  color:#eafff2;
 }
+
 .btn.danger:hover{
-  border-color:var(--accent); color:var(--accent);
+  border-color:var(--accent);
+  color:var(--accent);
 }
+
 .file-drop{
-  border:1px dashed var(--panel-border); border-radius:8px; padding:10px; text-align:center;
-  font-size:11px; color:var(--text-dim); cursor:pointer; font-family:var(--font-mono);
+  border:1px dashed var(--panel-border);
+  border-radius:8px;
+  padding:10px;
+  text-align:center;
+  font-size:11px;
+  color:var(--text-dim);
+  cursor:pointer;
+  font-family:var(--font-mono);
 }
+
 .file-drop:hover{
-  border-color:var(--phosphor); color:var(--phosphor);
+  border-color:var(--phosphor);
+  color:var(--phosphor);
 }
+
 .file-drop.has-file{
-  color:var(--phosphor); border-color:var(--phosphor-dim);
+  color:var(--phosphor);
+  border-color:var(--phosphor-dim);
 }
+
 input[type=file]{display:none;}
+
 .section{
-  display:flex; flex-direction:column; gap:10px;
+  display:flex;
+  flex-direction:column;
+  gap:10px;
 }
+
 .hidden{display:none!important;}
+
 .reset-btn{
-  width:100%; background:#241414; border:1px solid #4a2222; color:#e6a3a3;
-  font-family:var(--font-mono); font-size:11px; letter-spacing:1px; text-transform:uppercase;
-  padding:9px; border-radius:6px; cursor:pointer;
+  width:100%;
+  background:#241414;
+  border:1px solid #4a2222;
+  color:#e6a3a3;
+  font-family:var(--font-mono);
+  font-size:11px;
+  letter-spacing:1px;
+  text-transform:uppercase;
+  padding:9px;
+  border-radius:6px;
+  cursor:pointer;
 }
+
 .reset-btn:hover{
-  background:#331818; border-color:#7a2b2b; color:#ffb3b3;
+  background:#331818;
+  border-color:#7a2b2b;
+  color:#ffb3b3;
 }
+
 ::-webkit-scrollbar{width:8px;}
 ::-webkit-scrollbar-track{background:transparent;}
 ::-webkit-scrollbar-thumb{
-  background:#3a3f42; border-radius:4px;
+  background:#3a3f42;
+  border-radius:4px;
 }
+
 footer{
-  font-family:var(--font-mono); font-size:10px; color:#4a504c; letter-spacing:.5px; padding:6px 0 18px; text-align:center;
+  font-family:var(--font-mono);
+  font-size:10px;
+  color:#4a504c;
+  letter-spacing:.5px;
+  padding:6px 0 18px;
+  text-align:center;
 }
 </style>
 </head>
+
 <body>
+
 <div class="app">
+
   <div class="title-row">
     <span class="brand">◉ SCOPE-1</span>
     <span>Virtual Dual-Trace Oscilloscope &amp; Waveform Visualizer</span>
   </div>
+
   <div class="instrument">
+
     <!-- SCREEN -->
     <div class="screen-wrap">
+
       <div class="screen-topbar">
         <span>
           <span class="status-dot on" id="powerLed"></span>
           ONLINE
         </span>
+
         <div class="readout-group">
-          <span class="readout" id="readoutMode">MODE: <b>SHAPE</b></span>
-          <span class="readout" id="readoutSrc">SRC: <b>CIRCLE · 2D</b></span>
-          <span class="readout" id="readoutFps">FPS: <b>--</b></span>
+          <span class="readout" id="readoutMode">
+            MODE: <b>SHAPE</b>
+          </span>
+
+          <span class="readout" id="readoutSrc">
+            SRC: <b>CIRCLE · 2D</b>
+          </span>
+
+          <span class="readout" id="readoutFps">
+            FPS: <b>--</b>
+          </span>
         </div>
       </div>
+
       <div class="screen-frame">
         <canvas id="scope"></canvas>
         <div class="screen-vignette"></div>
         <div class="screen-glass"></div>
       </div>
+
       <div class="screen-footbar">
         <span id="chanLabel">CH1: X&nbsp;&nbsp;CH2: Y</span>
         <span id="timeLabel">TIME/DIV: --</span>
       </div>
+
     </div>
+
     <!-- CONTROLS -->
     <div class="panel">
+
       <div>
         <h3>Signal Source</h3>
+
         <div class="mode-tabs" id="modeTabs">
           <div class="mode-tab" data-mode="waveform">Waveform</div>
           <div class="mode-tab active" data-mode="shape">Shape</div>
           <div class="mode-tab" data-mode="audio">Audio</div>
         </div>
       </div>
+
+
       <!-- WAVEFORM -->
-      <div class="section" id="sec-waveform">
+      <div class="section hidden" id="sec-waveform">
+
         <div class="field">
-          <div class="field-row"><span>Waveform Type</span></div>
+
+          <div class="field-row">
+            <span>Waveform Type</span>
+          </div>
+
           <select id="waveformType">
             <option value="sine">Sine</option>
             <option value="square">Square</option>
             <option value="triangle">Triangle</option>
             <option value="sawtooth">Sawtooth</option>
           </select>
+
         </div>
+
       </div>
+
+
       <!-- SHAPE -->
       <div class="section" id="sec-shape">
+
         <div class="field">
-          <div class="field-row"><span>Shape</span></div>
+
+          <div class="field-row">
+            <span>Shape</span>
+          </div>
+
           <select id="shapeType">
             <option value="circle">Circle</option>
             <option value="square">Square</option>
@@ -279,817 +525,1355 @@ footer{
             <option value="star">Star</option>
             <option value="heart">Heart</option>
           </select>
+
         </div>
+
+
         <div class="field">
-          <div class="field-row"><span>Dimensions</span></div>
+
+          <div class="field-row">
+            <span>Dimensions</span>
+          </div>
+
           <div class="toggle-row">
-            <div class="toggle-btn active" data-dim="2d">2D</div>
-            <div class="toggle-btn" data-dim="3d">3D</div>
+
+            <div class="toggle-btn active" data-dim="2d">
+              2D
+            </div>
+
+            <div class="toggle-btn" data-dim="3d">
+              3D
+            </div>
+
           </div>
+
         </div>
-        <!-- Shape Audio -->
+
+
+        <!-- SHAPE AUDIO -->
         <div class="section">
+
           <h3>Shape Audio</h3>
+
           <div class="btn-row">
-            <button class="btn primary" id="btnShapeAudio">▶ Play Shape</button>
-            <button class="btn danger" id="btnShapeStop">■ Stop</button>
+
+            <button class="btn primary" id="btnShapeAudio">
+              ▶ Play Shape
+            </button>
+
+            <button class="btn danger" id="btnShapeStop">
+              ■ Stop
+            </button>
+
           </div>
-          <div style="font-size:10px; color:var(--text-dim); line-height:1.4;">
-            The shape's X/Y path is converted into stereo vector audio. X is left, Y is right.
+
+          <div style="
+            font-size:10px;
+            color:var(--text-dim);
+            line-height:1.4;
+          ">
+            The shape's X/Y path is converted into stereo vector
+            audio. X is the left channel and Y is the right channel.
           </div>
+
         </div>
+
       </div>
+
+
       <!-- TRANSFORM -->
       <div class="section" id="sec-transform">
+
         <h3>Transform</h3>
+
         <div class="field">
-          <div class="field-row"><span>Position X</span><span class="val" id="v-posX">0.00</span></div>
-          <input type="range" id="posX" min="-0.7" max="0.7" step="0.01" value="0" />
-        </div>
-        <div class="field">
-          <div class="field-row"><span>Position Y</span><span class="val" id="v-posY">0.00</span></div>
-          <input type="range" id="posY" min="-0.7" max="0.7" step="0.01" value="0" />
-        </div>
-        <div class="field">
-          <div class="field-row"><span>Scale</span><span class="val" id="v-scale">1.00</span></div>
-          <input type="range" id="scale" min="0.2" max="2.5" step="0.01" value="1" />
-        </div>
-        <div class="field" id="field-rotation2d">
-          <div class="field-row"><span>Rotation</span><span class="val" id="v-rotation">0°</span></div>
-          <input type="range" id="rotation" min="0" max="360" step="1" value="0" />
-        </div>
-        <!-- 3D Rotations -->
-        <div class="field hidden" id="field-rotX">
-          <div class="field-row"><span>Rotation X</span><span class="val" id="v-rotX">20°</span></div>
-          <input type="range" id="rotX" min="0" max="360" step="1" value="20" />
-        </div>
-        <div class="field hidden" id="field-rotY">
-          <div class="field-row"><span>Rotation Y</span><span class="val" id="v-rotY">30°</span></div>
-          <input type="range" id="rotY" min="0" max="360" step="1" value="30" />
-        </div>
-        <div class="field hidden" id="field-rotZ">
-          <div class="field-row"><span>Rotation Z</span><span class="val" id="v-rotZ">0°</span></div>
-          <input type="range" id="rotZ" min="0" max="360" step="1" value="0" />
-        </div>
-      </div>
-      <!-- Signal -->
-      <div class="section" id="sec-signal">
-        <h3>Signal</h3>
-        <div class="field">
-          <div class="field-row"><span>Frequency</span><span class="val" id="v-frequency">3.0</span></div>
-          <input type="range" id="frequency" min="0.2" max="16" step="0.1" value="3" />
-        </div>
-        <div class="field">
-          <div class="field-row"><span>Amplitude</span><span class="val" id="v-amplitude">0.30</span></div>
-          <input type="range" id="amplitude" min="0" max="1" step="0.01" value="0.3" />
-        </div>
-        <div class="field">
-          <div class="field-row"><span>Phase</span><span class="val" id="v-phase">0°</span></div>
-          <input type="range" id="phase" min="0" max="360" step="1" value="0" />
-        </div>
-        <div class="field">
-          <div class="field-row"><span>Speed</span><span class="val" id="v-speed">1.00</span></div>
-          <input type="range" id="speed" min="0" max="3" step="0.05" value="1" />
-        </div>
-      </div>
-      <!-- AUDIO Input -->
-      <div class="section hidden" id="sec-audio">
-        <h3>Audio Input</h3>
-        <div class="file-drop" id="fileDrop">Click to choose an audio file…</div>
-        <input type="file" id="audioFile" accept="audio/*" />
-        <!-- Audio Mode -->
-        <div class="field hidden" id="audioDimensionField">
-          <div class="field-row"><span>Audio Display</span></div>
-          <div class="toggle-row">
-            <div class="toggle-btn active" data-audiodim="1d">1D Waveform</div>
-            <div class="toggle-btn" data-audiodim="2d">2D XY</div>
+          <div class="field-row">
+            <span>Position X</span>
+            <span class="val" id="v-posX">0.00</span>
           </div>
+
+          <input type="range"
+                 id="posX"
+                 min="-0.7"
+                 max="0.7"
+                 step="0.01"
+                 value="0">
         </div>
-        <!-- Player controls -->
+
+
+        <div class="field">
+          <div class="field-row">
+            <span>Position Y</span>
+            <span class="val" id="v-posY">0.00</span>
+          </div>
+
+          <input type="range"
+                 id="posY"
+                 min="-0.7"
+                 max="0.7"
+                 step="0.01"
+                 value="0">
+        </div>
+
+
+        <div class="field">
+          <div class="field-row">
+            <span>Scale</span>
+            <span class="val" id="v-scale">1.00</span>
+          </div>
+
+          <input type="range"
+                 id="scale"
+                 min="0.2"
+                 max="2.5"
+                 step="0.01"
+                 value="1">
+        </div>
+
+
+        <div class="field" id="field-rotation2d">
+
+          <div class="field-row">
+            <span>Rotation</span>
+            <span class="val" id="v-rotation">0°</span>
+          </div>
+
+          <input type="range"
+                 id="rotation"
+                 min="0"
+                 max="360"
+                 step="1"
+                 value="0">
+
+        </div>
+
+
+        <div class="field hidden" id="field-rotX">
+
+          <div class="field-row">
+            <span>Rotation X</span>
+            <span class="val" id="v-rotX">20°</span>
+          </div>
+
+          <input type="range"
+                 id="rotX"
+                 min="0"
+                 max="360"
+                 step="1"
+                 value="20">
+
+        </div>
+
+
+        <div class="field hidden" id="field-rotY">
+
+          <div class="field-row">
+            <span>Rotation Y</span>
+            <span class="val" id="v-rotY">30°</span>
+          </div>
+
+          <input type="range"
+                 id="rotY"
+                 min="0"
+                 max="360"
+                 step="1"
+                 value="30">
+
+        </div>
+
+
+        <div class="field hidden" id="field-rotZ">
+
+          <div class="field-row">
+            <span>Rotation Z</span>
+            <span class="val" id="v-rotZ">0°</span>
+          </div>
+
+          <input type="range"
+                 id="rotZ"
+                 min="0"
+                 max="360"
+                 step="1"
+                 value="0">
+
+        </div>
+
+      </div>
+
+
+      <!-- SIGNAL -->
+      <div class="section" id="sec-signal">
+
+        <h3>Signal</h3>
+
+        <div class="field">
+
+          <div class="field-row">
+            <span>Frequency</span>
+            <span class="val" id="v-frequency">120.0</span>
+          </div>
+
+          <input type="range"
+                 id="frequency"
+                 min="20"
+                 max="880"
+                 step="1"
+                 value="120">
+
+        </div>
+
+
+        <div class="field">
+
+          <div class="field-row">
+            <span>Amplitude</span>
+            <span class="val" id="v-amplitude">0.30</span>
+          </div>
+
+          <input type="range"
+                 id="amplitude"
+                 min="0"
+                 max="1"
+                 step="0.01"
+                 value="0.3">
+
+        </div>
+
+
+        <div class="field">
+
+          <div class="field-row">
+            <span>Phase</span>
+            <span class="val" id="v-phase">0°</span>
+          </div>
+
+          <input type="range"
+                 id="phase"
+                 min="0"
+                 max="360"
+                 step="1"
+                 value="0">
+
+        </div>
+
+
+        <div class="field">
+
+          <div class="field-row">
+            <span>Speed</span>
+            <span class="val" id="v-speed">1.00</span>
+          </div>
+
+          <input type="range"
+                 id="speed"
+                 min="0"
+                 max="3"
+                 step="0.05"
+                 value="1">
+
+        </div>
+
+      </div>
+
+
+      <!-- AUDIO -->
+      <div class="section hidden" id="sec-audio">
+
+        <h3>Audio Input</h3>
+
+        <div class="file-drop" id="fileDrop">
+          Click to choose an audio file…
+        </div>
+
+        <input type="file"
+               id="audioFile"
+               accept="audio/*">
+
+
+        <!-- AUDIO DISPLAY MODE -->
+        <div class="field" id="audioDimensionField">
+
+          <div class="field-row">
+            <span>Audio Display</span>
+          </div>
+
+          <div class="toggle-row">
+
+            <div class="toggle-btn active"
+                 data-audiodim="1d">
+              1D Waveform
+            </div>
+
+            <div class="toggle-btn"
+                 data-audiodim="2d">
+              2D XY
+            </div>
+
+          </div>
+
+        </div>
+
+
         <div class="btn-row">
-          <button class="btn primary" id="btnPlay">▶ Play</button>
-          <button class="btn" id="btnPause">‖ Pause</button>
-          <button class="btn danger" id="btnStop">■ Stop</button>
+
+          <button class="btn primary" id="btnPlay">
+            ▶ Play
+          </button>
+
+          <button class="btn" id="btnPause">
+            ‖ Pause
+          </button>
+
+          <button class="btn danger" id="btnStop">
+            ■ Stop
+          </button>
+
         </div>
-        <!-- Seek and volume -->
+
+
         <div class="field">
-          <div class="field-row"><span>Seek</span><span class="val" id="v-seek">0:00 / 0:00</span></div>
-          <input type="range" id="seek" min="0" max="100" step="0.1" value="0" />
+
+          <div class="field-row">
+
+            <span>Seek</span>
+
+            <span class="val" id="v-seek">
+              0:00 / 0:00
+            </span>
+
+          </div>
+
+          <input type="range"
+                 id="seek"
+                 min="0"
+                 max="100"
+                 step="0.1"
+                 value="0">
+
         </div>
+
+
         <div class="field">
-          <div class="field-row"><span>Volume</span><span class="val" id="v-volume">80%</span></div>
-          <input type="range" id="volume" min="0" max="100" step="1" value="80" />
+
+          <div class="field-row">
+
+            <span>Volume</span>
+
+            <span class="val" id="v-volume">
+              80%
+            </span>
+
+          </div>
+
+          <input type="range"
+                 id="volume"
+                 min="0"
+                 max="100"
+                 step="1"
+                 value="80">
+
         </div>
+
       </div>
-      <!-- Display -->
+
+
+      <!-- DISPLAY -->
       <div class="section" id="sec-display">
+
         <h3>Display</h3>
+
         <div class="field">
-          <div class="field-row"><span>Time / Zoom</span><span class="val" id="v-zoom">1.00×</span></div>
-          <input type="range" id="zoom" min="0.25" max="4" step="0.05" value="1" />
+
+          <div class="field-row">
+
+            <span>Time / Zoom</span>
+
+            <span class="val" id="v-zoom">
+              1.00×
+            </span>
+
+          </div>
+
+          <input type="range"
+                 id="zoom"
+                 min="0.25"
+                 max="4"
+                 step="0.05"
+                 value="1">
+
         </div>
+
+
         <div class="field">
-          <div class="field-row"><span>Persistence</span><span class="val" id="v-persistence">60</span></div>
-          <input type="range" id="persistence" min="0" max="100" step="1" value="60" />
+
+          <div class="field-row">
+
+            <span>Persistence</span>
+
+            <span class="val" id="v-persistence">
+              60
+            </span>
+
+          </div>
+
+          <input type="range"
+                 id="persistence"
+                 min="0"
+                 max="100"
+                 step="1"
+                 value="60">
+
         </div>
+
+
         <div class="field">
-          <div class="field-row"><span>Brightness</span><span class="val" id="v-brightness">70</span></div>
-          <input type="range" id="brightness" min="10" max="100" step="1" value="70" />
+
+          <div class="field-row">
+
+            <span>Brightness</span>
+
+            <span class="val" id="v-brightness">
+              70
+            </span>
+
+          </div>
+
+          <input type="range"
+                 id="brightness"
+                 min="10"
+                 max="100"
+                 step="1"
+                 value="70">
+
         </div>
+
       </div>
-      <button class="reset-btn" id="btnReset">⟳ Reset to Defaults</button>
+
+
+      <button class="reset-btn" id="btnReset">
+        ⟳ Reset to Defaults
+      </button>
+
     </div>
+
   </div>
-  <footer>SCOPE-1 · runs entirely in your browser · no data leaves your device</footer>
+
+  <footer>
+    SCOPE-1 · runs entirely in your browser · no data leaves your device
+  </footer>
+
 </div>
-<audio id="audioPlayer" preload="metadata" style="display:none"></audio>
+
+<audio id="audioPlayer"
+       preload="metadata"
+       style="display:none"></audio>
+
 
 <script>
-(function() {
-  "use strict";
+(function(){
 
-  /* ======================= STATES ======================= */
-  const defaults = {
-    mode:'shape',
-    waveformType:'sine',
-    shapeType:'circle',
-    is3D:false,
-    audioDimension:'1d',
-    posX:0,
-    posY:0,
-    scale:1,
-    rotation:0,
-    rotX:20,
-    rotY:30,
-    rotZ:0,
-    frequency:3,
-    amplitude:0.3,
-    phase:0,
-    speed:1,
-    zoom:1,
-    persistence:60,
-    brightness:70,
-    volume:80
+"use strict";
+
+/* =========================================================
+   STATE
+   ========================================================= */
+
+const defaults = {
+  mode:'shape',
+  waveformType:'sine',
+  shapeType:'circle',
+  is3D:false,
+  audioDimension:'1d',
+  posX:0,
+  posY:0,
+  scale:1,
+  rotation:0,
+  rotX:20,
+  rotY:30,
+  rotZ:0,
+  frequency:120,
+  amplitude:0.3,
+  phase:0,
+  speed:1,
+  zoom:1,
+  persistence:60,
+  brightness:70,
+  volume:80
+};
+
+const state = Object.assign({}, defaults);
+
+/* =========================================================
+   CANVAS
+   ========================================================= */
+
+const screenFrame = document.querySelector('.screen-frame');
+const canvas = document.getElementById('scope');
+const ctx = canvas.getContext('2d');
+
+const traceCanvas = document.createElement('canvas');
+const traceCtx = traceCanvas.getContext('2d');
+
+let cssW = 0;
+let cssH = 0;
+let dpr = 1;
+
+function resizeCanvas(){
+  const rect = screenFrame.getBoundingClientRect();
+  dpr = Math.min(window.devicePixelRatio || 1, 2.5);
+  cssW = Math.max(1, Math.round(rect.width));
+  cssH = Math.max(1, Math.round(rect.height));
+
+  canvas.width = Math.round(cssW * dpr);
+  canvas.height = Math.round(cssH * dpr);
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+
+  traceCanvas.width = Math.round(cssW * dpr);
+  traceCanvas.height = Math.round(cssH * dpr);
+  traceCtx.setTransform(dpr, 0, 0, dpr, 0, 0);
+}
+
+window.addEventListener('resize', resizeCanvas);
+resizeCanvas();
+
+/* =========================================================
+   GRID
+   ========================================================= */
+
+function drawGrid(){
+  const w = cssW;
+  const h = cssH;
+
+  ctx.fillStyle = '#04140c';
+  ctx.fillRect(0, 0, w, h);
+
+  const cols = 10;
+  const rows = 8;
+  const cw = w / cols;
+  const ch = h / rows;
+
+  ctx.lineWidth = 1;
+  ctx.strokeStyle = 'rgba(70,180,120,0.16)';
+  ctx.beginPath();
+
+  for(let i = 1; i < cols; i++){
+    const x = Math.round(i * cw) + 0.5;
+    ctx.moveTo(x, 0);
+    ctx.lineTo(x, h);
+  }
+
+  for(let j = 1; j < rows; j++){
+    const y = Math.round(j * ch) + 0.5;
+    ctx.moveTo(0, y);
+    ctx.lineTo(w, y);
+  }
+  ctx.stroke();
+
+  ctx.strokeStyle = 'rgba(90,220,150,0.32)';
+  ctx.beginPath();
+
+  const midX = Math.round(w / 2) + 0.5;
+  const midY = Math.round(h / 2) + 0.5;
+
+  ctx.moveTo(midX, 0);
+  ctx.lineTo(midX, h);
+  ctx.moveTo(0, midY);
+  ctx.lineTo(w, midY);
+  ctx.stroke();
+
+  ctx.strokeStyle = 'rgba(90,220,150,0.28)';
+  ctx.beginPath();
+
+  const tick = 4;
+  for(let i = 0; i <= cols * 5; i++){
+    const x = i * (w / (cols * 5));
+    ctx.moveTo(x, midY - tick);
+    ctx.lineTo(x, midY + tick);
+  }
+
+  for(let j = 0; j <= rows * 5; j++){
+    const y = j * (h / (rows * 5));
+    ctx.moveTo(midX - tick, y);
+    ctx.lineTo(midX + tick, y);
+  }
+  ctx.stroke();
+
+  ctx.strokeStyle = 'rgba(90,220,150,0.35)';
+  ctx.lineWidth = 1;
+  ctx.strokeRect(.5, .5, w - 1, h - 1);
+}
+
+/* =========================================================
+   WAVEFORMS
+   ========================================================= */
+
+const Wave = {
+  sine: a => Math.sin(a),
+  square: a => {
+    const s = Math.sin(a);
+    return s === 0 ? 0 : (s > 0 ? 1 : -1);
+  },
+  triangle: a => (2 / Math.PI) * Math.asin(Math.sin(a)),
+  sawtooth: a => {
+    const t = a / (2 * Math.PI);
+    return 2 * (t - Math.floor(.5 + t));
+  }
+};
+
+/* =========================================================
+   SHAPES
+   ========================================================= */
+
+function pointOnPolygon(t, verts){
+  const n = verts.length;
+  let p = t * n;
+  p = ((p % n) + n) % n;
+  const seg = Math.floor(p) % n;
+  const f = p - Math.floor(p);
+  const a = verts[seg];
+  const b = verts[(seg + 1) % n];
+  return {
+    x: a[0] + (b[0] - a[0]) * f,
+    y: a[1] + (b[1] - a[1]) * f
   };
-  const state = Object.assign({}, defaults);
+}
 
-  /* ======================= CANVAS ======================= */
-  const screenFrame = document.querySelector('.screen-frame');
-  const canvas = document.getElementById('scope');
-  const ctx = canvas.getContext('2d');
-  const traceCanvas = document.createElement('canvas');
-  const traceCtx = traceCanvas.getContext('2d');
-
-  let cssW=0, cssH=0, dpr=1;
-  function resizeCanvas(){
-    const rect = screenFrame.getBoundingClientRect();
-    dpr = Math.min(window.devicePixelRatio||1, 2.5);
-    cssW = Math.max(1, Math.round(rect.width));
-    cssH = Math.max(1, Math.round(rect.height));
-    canvas.width = Math.round(cssW*dpr);
-    canvas.height= Math.round(cssH*dpr);
-    ctx.setTransform(dpr,0,0,dpr,0,0);
-    traceCanvas.width= Math.round(cssW*dpr);
-    traceCanvas.height= Math.round(cssH*dpr);
-    traceCtx.setTransform(dpr,0,0,dpr,0,0);
+function regularPolygon(n){
+  const v = [];
+  for(let i = 0; i < n; i++){
+    const ang = -Math.PI / 2 + i * 2 * Math.PI / n;
+    v.push([Math.cos(ang), Math.sin(ang)]);
   }
-  window.addEventListener('resize', resizeCanvas);
-  resizeCanvas();
+  return v;
+}
 
-  /* ======================= GRID ======================= */
-  function drawGrid() {
-    ctx.fillStyle='#04140c';
-    ctx.fillRect(0,0,cssW,cssH);
-    const cols=10, rows=8;
-    const cw=cssW/cols, ch=cssH/rows;
-    ctx.lineWidth=1;
-    ctx.strokeStyle='rgba(70,180,120,0.16)';
-    ctx.beginPath();
-    for(let i=1;i<cols;i++){
-      const x=Math.round(i*cw)+0.5; ctx.moveTo(x,0); ctx.lineTo(x,cssH);
+const PHI = (1 + Math.sqrt(5)) / 2;
+const STAR_INNER_RATIO = 1 / (PHI * PHI);
+
+const ShapeVerts = {
+  square: [[-1, -1], [1, -1], [1, 1], [-1, 1]],
+  triangle: regularPolygon(3),
+  pentagon: regularPolygon(5),
+  star: (() => {
+    const v = [];
+    const points = 5;
+    for(let i = 0; i < points * 2; i++){
+      const r = i % 2 === 0 ? 1 : STAR_INNER_RATIO;
+      const ang = -Math.PI / 2 + i * Math.PI / points;
+      v.push([r * Math.cos(ang), r * Math.sin(ang)]);
     }
-    for(let j=1;j<rows;j++){
-      const y=Math.round(j*ch)+0.5; ctx.moveTo(0,y); ctx.lineTo(cssW,y);
-    }
-    ctx.stroke();
-    ctx.strokeStyle='rgba(90,220,150,0.32)';
-    ctx.beginPath();
-    const midX=Math.round(cssW/2)+0.5, midY=Math.round(cssH/2)+0.5;
-    ctx.moveTo(midX,0); ctx.lineTo(midX,cssH);
-    ctx.moveTo(0,midY); ctx.lineTo(cssW,midY);
-    ctx.stroke();
-    ctx.strokeStyle='rgba(90,220,150,0.28)';
-    ctx.beginPath();
-    const tick=4;
-    for(let i=0;i<=cols*5;i++){
-      const x=i*(cssW/(cols*5));
-      ctx.moveTo(x,midY-tick); ctx.lineTo(x,midY+tick);
-    }
-    for(let j=0;j<=rows*5;j++){
-      const y=j*(cssH/(rows*5));
-      ctx.moveTo(midX-tick,y); ctx.lineTo(midX+tick,y);
-    }
-    ctx.stroke();
-    ctx.strokeStyle='rgba(90,220,150,0.35)';
-    ctx.lineWidth=1;
-    ctx.strokeRect(.5,.5,cssW-1,cssH-1);
+    return v;
+  })()
+};
+
+const ShapeFns = {
+  circle: t => {
+    const a = t * 2 * Math.PI;
+    return { x: Math.cos(a), y: Math.sin(a) };
+  },
+  square: t => pointOnPolygon(t, ShapeVerts.square),
+  triangle: t => pointOnPolygon(t, ShapeVerts.triangle),
+  pentagon: t => pointOnPolygon(t, ShapeVerts.pentagon),
+  star: t => pointOnPolygon(t, ShapeVerts.star),
+  heart: t => {
+    const a = t * 2 * Math.PI;
+    const x = 16 * Math.pow(Math.sin(a), 3);
+    const y = 13 * Math.cos(a) - 5 * Math.cos(2 * a) - 2 * Math.cos(3 * a) - Math.cos(4 * a);
+    const HEART_SCALE = 16;
+    const HEART_Y_CENTER = -2.53837;
+    return {
+      x: x / HEART_SCALE,
+      y: -(y - HEART_Y_CENTER) / HEART_SCALE
+    };
+  }
+};
+
+/* =========================================================
+   3D GEOMETRY
+   ========================================================= */
+
+function buildExtrudedShape(shapeKey){
+  const n = shapeKey === 'square' ? 4 :
+            shapeKey === 'triangle' ? 3 :
+            shapeKey === 'pentagon' ? 5 :
+            shapeKey === 'star' ? 10 : 48;
+
+  const depth = shapeKey === 'square' ? 1 : .42;
+  const front = [];
+  const back = [];
+  const fn = ShapeFns[shapeKey];
+
+  for(let i = 0; i < n; i++){
+    const t = i / n;
+    const p = fn(t);
+    front.push([p.x, p.y, depth]);
+    back.push([p.x, p.y, -depth]);
   }
 
-  /* ======================= WAVEFORMS ======================= */
-  const Wave={
-    sine: a=>Math.sin(a),
-    square: a=>{ const s=Math.sin(a); return s===0?0:(s>0?1:-1); },
-    triangle: a=> (2/Math.PI)*Math.asin(Math.sin(a)),
-    sawtooth: a=>{ const t=a/(2*Math.PI); return 2*(t-Math.floor(.5+t)); }
+  const strokes = [];
+  strokes.push(front.concat([front[0]]));
+  strokes.push(back.concat([back[0]]));
+
+  const strutStep = n > 12 ? Math.max(1, Math.floor(n / 10)) : 1;
+  for(let i = 0; i < n; i += strutStep){
+    strokes.push([front[i], back[i]]);
+  }
+  return strokes;
+}
+
+function buildSphere(){
+  const strokes = [];
+  const numLat = 5;
+  const numLon = 8;
+  const segs = 32;
+
+  for(let i = 1; i < numLat; i++){
+    const phi = -Math.PI / 2 + i * (Math.PI / numLat);
+    const ring = [];
+    for(let j = 0; j <= segs; j++){
+      const th = j * 2 * Math.PI / segs;
+      ring.push([
+        Math.cos(phi) * Math.cos(th),
+        Math.sin(phi),
+        Math.cos(phi) * Math.sin(th)
+      ]);
+    }
+    strokes.push(ring);
+  }
+
+  for(let j = 0; j < numLon; j++){
+    const th = j * 2 * Math.PI / numLon;
+    const merid = [];
+    for(let i = 0; i <= segs; i++){
+      const phi = -Math.PI / 2 + i * (Math.PI / segs);
+      merid.push([
+        Math.cos(phi) * Math.cos(th),
+        Math.sin(phi),
+        Math.cos(phi) * Math.sin(th)
+      ]);
+    }
+    strokes.push(merid);
+  }
+  return strokes;
+}
+
+const Shape3DCache = {};
+
+function get3DGeometry(shapeKey){
+  if(Shape3DCache[shapeKey]) return Shape3DCache[shapeKey];
+  const g = shapeKey === 'circle' ? buildSphere() : buildExtrudedShape(shapeKey);
+  Shape3DCache[shapeKey] = g;
+  return g;
+}
+
+function project3D(pt, rx, ry, rz){
+  let x = pt[0], y = pt[1], z = pt[2];
+
+  let rad = rx * Math.PI / 180;
+  let cos = Math.cos(rad), sin = Math.sin(rad);
+  let y1 = y * cos - z * sin;
+  let z1 = y * sin + z * cos;
+
+  rad = ry * Math.PI / 180;
+  cos = Math.cos(rad); sin = Math.sin(rad);
+  let x2 = x * cos + z1 * sin;
+  let z2 = -x * sin + z1 * cos;
+
+  rad = rz * Math.PI / 180;
+  cos = Math.cos(rad); sin = Math.sin(rad);
+  let x3 = x2 * cos - y1 * sin;
+  let y3 = x2 * sin + y1 * cos;
+
+  const fov = 3.0;
+  const distance = 4.0;
+  const pFactor = fov / (distance - z2);
+
+  return {
+    x: x3 * pFactor,
+    y: y3 * pFactor
   };
+}
 
-  /* ======================= SHAPES ======================= */
-  function pointOnPolygon(t,verts){
-    const n=verts.length;
-    const p=t*n;
-    let seg=Math.floor(p)%n;
-    if(seg<0)seg+=n;
-    const f=p-Math.floor(p);
-    const a=verts[seg], b=verts[(seg+1)%n];
-    return{ x:a[0]+(b[0]-a[0])*f, y:a[1]+(b[1]-a[1])*f };
-  }
-  function regularPolygon(n){ const v=[]; for(let i=0;i<n;i++){ const ang=-Math.PI/2+i*2*Math.PI/n; v.push([Math.cos(ang),Math.sin(ang)]); } return v; }
+/* =========================================================
+   AUDIO ENGINE & VECTOR AUDIO SYNTHESIS
+   ========================================================= */
 
-  const PHI = (1+Math.sqrt(5))/2;
-  const STAR_INNER_RATIO=1/(PHI*PHI);
-  const ShapeVerts={
-    square:[[-1,-1],[1,-1],[1,1],[-1,1]],
-    triangle:regularPolygon(3),
-    pentagon:regularPolygon(5),
-    star:(()=>{ const v=[]; const pts=5; for(let i=0;i<pts*2;i++){ const r=i%2===0?1:STAR_INNER_RATIO; const ang=-Math.PI/2+i*Math.PI/pts; v.push([r*Math.cos(ang),r*Math.sin(ang)]); } return v; })()
-  };
-  const ShapeFns={
-    circle: t=>{ const a=t*2*Math.PI; return {x:Math.cos(a), y:Math.sin(a)}; },
-    square: t=>pointOnPolygon(t,ShapeVerts.square),
-    triangle: t=>pointOnPolygon(t,ShapeVerts.triangle),
-    pentagon: t=>pointOnPolygon(t,ShapeVerts.pentagon),
-    star: t=>pointOnPolygon(t,ShapeVerts.star),
-    heart: t=>{ const a=t*2*Math.PI; const x=16*Math.pow(Math.sin(a),3); const y=13*Math.cos(a)-5*Math.cos(2*a)-2*Math.cos(3*a)-Math.cos(4*a); const scale=16; const yOffset=-2.53837; return {x:x/scale, y:(y - yOffset)/scale}; }
-  };
-  const ShapeSamples={circle:160,heart:160,square:80,triangle:60,pentagon:100,star:160};
+const audioEl = document.getElementById('audioPlayer');
+let audioCtx = null;
+let analyser = null;
+let sourceNode = null;
+let audioReady = false;
+let audioDataArray = null;
+let userSeeking = false;
 
-  /* ======================= 3D Geometry ======================= */
-  const Shape3DCache={};
-  function get3DGeometry(shapeKey){
-    if(Shape3DCache[shapeKey]) return Shape3DCache[shapeKey];
-    const g=shapeKey==='circle' ? buildSphere() : buildExtrudedShape(shapeKey);
-    Shape3DCache[shapeKey]=g;
-    return g;
+let shapeAudioNode = null;
+let isShapeAudioPlaying = false;
+
+function ensureAudioGraph(){
+  if(audioReady) return;
+  audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+
+  sourceNode = audioCtx.createMediaElementSource(audioEl);
+  analyser = audioCtx.createAnalyser();
+  analyser.fftSize = 2048;
+  analyser.smoothingTimeConstant = .08;
+
+  sourceNode.connect(analyser);
+  analyser.connect(audioCtx.destination);
+
+  audioDataArray = new Uint8Array(analyser.fftSize);
+  audioReady = true;
+}
+
+async function startShapeAudio(){
+  ensureAudioGraph();
+  if(audioCtx.state === 'suspended'){
+    await audioCtx.resume();
   }
-  function buildExtrudedShape(shapeKey){
-    const n=shapeKey==='square'?4:shapeKey==='triangle'?3:shapeKey==='pentagon'?5:shapeKey==='star'?10:48;
-    const depth=shapeKey==='square'?1:0.42;
-    const fn=ShapeFns[shapeKey];
-    const front=[], back=[];
-    for(let i=0;i<n;i++){
-      const t=i/n; const p=fn(t);
-      front.push([p.x,p.y,depth]);
-      back.push([p.x,p.y,-depth]);
-    }
-    const strokes=[];
-    strokes.push(front.concat([front[0]]));
-    strokes.push(back.concat([back[0]]));
-    const step= n>12 ? Math.max(1,Math.floor(n/10)) : 1;
-    for(let i=0;i<n;i+=step){ strokes.push([front[i], back[i]]); }
-    return strokes;
+
+  if(shapeAudioNode){
+    shapeAudioNode.disconnect();
+    shapeAudioNode = null;
   }
-  function buildSphere() {
-    const strokes=[];
-    const lat=5; const lon=8; const segs=32;
-    for(let i=1;i<lat;i++){
-      const phi=-Math.PI/2+i*(Math.PI/lat); const ring=[];
-      for(let j=0;j<=segs;j++){
-        const th=j*2*Math.PI/segs;
-        ring.push([Math.cos(phi)*Math.cos(th), Math.sin(phi), Math.cos(phi)*Math.sin(th)]);
+
+  const workletCode = `
+    class ShapeAudioProcessor extends AudioWorkletProcessor {
+      constructor(){
+        super();
+        this.phase = 0;
+        this.params = {
+          frequency: 120,
+          amplitude: 0.3,
+          shapeType: 'circle',
+          is3D: false,
+          scale: 1,
+          posX: 0,
+          posY: 0,
+          rotation: 0,
+          rotX: 20,
+          rotY: 30,
+          rotZ: 0,
+          phaseOffset: 0
+        };
+
+        this.port.onmessage = (e) => {
+          Object.assign(this.params, e.data);
+        };
       }
-      strokes.push(ring);
-    }
-    for(let j=0;j<lon;j++){
-      const th=j*2*Math.PI/lon; const merid=[];
-      for(let i=0;i<=segs;i++){
-        const phi=-Math.PI/2+i*(Math.PI/segs);
-        merid.push([Math.cos(phi)*Math.cos(th), Math.sin(phi), Math.cos(phi)*Math.sin(th)]);
+
+      pointOnPoly(t, verts){
+        const n = verts.length;
+        let p = t * n;
+        p = ((p % n) + n) % n;
+        const seg = Math.floor(p) % n;
+        const f = p - Math.floor(p);
+        const a = verts[seg];
+        const b = verts[(seg + 1) % n];
+        return {
+          x: a[0] + (b[0] - a[0]) * f,
+          y: a[1] + (b[1] - a[1]) * f
+        };
       }
-      strokes.push(merid);
+
+      getShapePoint(t, type){
+        if(type === 'circle'){
+          const a = t * 2 * Math.PI;
+          return { x: Math.cos(a), y: Math.sin(a) };
+        }
+        if(type === 'square'){
+          return this.pointOnPoly(t, [[-1,-1],[1,-1],[1,1],[-1,1]]);
+        }
+        if(type === 'triangle'){
+          return this.pointOnPoly(t, [[0,-1],[0.866,0.5],[-0.866,0.5]]);
+        }
+        if(type === 'pentagon'){
+          const v = [];
+          for(let i=0; i<5; i++){
+            const a = -Math.PI/2 + i*2*Math.PI/5;
+            v.push([Math.cos(a), Math.sin(a)]);
+          }
+          return this.pointOnPoly(t, v);
+        }
+        if(type === 'star'){
+          const v = [];
+          const rInner = 0.381966;
+          for(let i=0; i<10; i++){
+            const r = i%2===0 ? 1 : rInner;
+            const a = -Math.PI/2 + i*Math.PI/5;
+            v.push([r*Math.cos(a), r*Math.sin(a)]);
+          }
+          return this.pointOnPoly(t, v);
+        }
+        if(type === 'heart'){
+          const a = t * 2 * Math.PI;
+          const x = 16 * Math.pow(Math.sin(a), 3);
+          const y = 13 * Math.cos(a) - 5 * Math.cos(2 * a) - 2 * Math.cos(3 * a) - Math.cos(4 * a);
+          return { x: x / 16, y: -(y - (-2.53837)) / 16 };
+        }
+        return { x: 0, y: 0 };
+      }
+
+      process(inputs, outputs){
+        const output = outputs[0];
+        if(!output || output.length < 2) return true;
+
+        const left = output[0];
+        const right = output[1];
+        const numSamples = left.length;
+        const sr = sampleRate;
+
+        const p = this.params;
+        const phaseInc = p.frequency / sr;
+
+        for(let i = 0; i < numSamples; i++){
+          this.phase = (this.phase + phaseInc) % 1.0;
+          let pt = this.getShapePoint(this.phase, p.shapeType);
+
+          let x = pt.x * p.scale;
+          let y = pt.y * p.scale;
+
+          if(!p.is3D && p.rotation !== 0){
+            const rad = p.rotation * Math.PI / 180;
+            const cos = Math.cos(rad);
+            const sin = Math.sin(rad);
+            const rx = x * cos - y * sin;
+            const ry = x * sin + y * cos;
+            x = rx;
+            y = ry;
+          }
+
+          x += p.posX;
+          y += p.posY;
+
+          if(p.phaseOffset !== 0){
+            const pRad = p.phaseOffset * Math.PI / 180;
+            const cos = Math.cos(pRad);
+            const sin = Math.sin(pRad);
+            const px = x * cos - y * sin;
+            const py = x * sin + y * cos;
+            x = px;
+            y = py;
+          }
+
+          left[i] = Math.max(-1, Math.min(1, x * p.amplitude));
+          right[i] = Math.max(-1, Math.min(1, y * p.amplitude));
+        }
+
+        return true;
+      }
     }
-    return strokes;
-  }
+    registerProcessor('shape-audio-processor', ShapeAudioProcessor);
+  `;
 
-  /* ======================= Audio Engine ======================= */
-  const audioEl=document.getElementById('audioPlayer');
-  let audioCtx=null;
-  let analyser=null;
-  let sourceNode=null;
-  let audioReady=false;
-  let audioDataArray=null;
-  let decodedAudio=null;
-  let userSeeking=false;
-  let shapeAudioSource=null;
-  let shapeAudioGain=null;
+  const blob = new Blob([workletCode], { type: 'application/javascript' });
+  const url = URL.createObjectURL(blob);
 
-  function ensureAudioGraph() {
-    if(audioReady) return;
-    audioCtx = new (window.AudioContext||window.webkitAudioContext)();
-    sourceNode = audioCtx.createMediaElementSource(audioEl);
-    analyser = audioCtx.createAnalyser();
-    analyser.fftSize=2048;
-    analyser.smoothingTimeConstant=0.08;
-    sourceNode.connect(analyser);
-    analyser.connect(audioCtx.destination);
-    audioDataArray=new Uint8Array(analyser.fftSize);
-    audioReady=true;
-  }
-
-  async function decodeAudioFile(file){
-    if(!audioCtx){ audioCtx=new (window.AudioContext||window.webkitAudioContext)(); }
-    const buffer=await file.arrayBuffer();
-    try{
-      decodedAudio=await audioCtx.decodeAudioData(buffer);
-    }catch(e){
-      console.error(e); alert('Could not decode this audio file.');
-      decodedAudio=null;
-    }
-  }
-
-  function fmtTime(sec){
-    if(!isFinite(sec)||sec<0) sec=0;
-    const m=Math.floor(sec/60);
-    const s=Math.floor(sec%60);
-    return m+':'+(s<10?'0':'')+s;
-  }
-
-  const el=(id)=>document.getElementById(id);
-  const readoutMode=el('readoutMode');
-  const readoutSrc=el('readoutSrc');
-  const readoutFps=el('readoutFps');
-  const timeLabel=el('timeLabel');
-  const chanLabel=el('chanLabel');
-
-  /* Slider bindings */
-  function bindSlider(id, key, opts) {
-    opts=opts||{};
-    const input=el(id);
-    const label=el('v-'+id);
-    function refresh() {
-      const v=parseFloat(input.value);
-      if(key!==undefined) { state[key]=v; } else { state[id]=v; }
-      if(label) { label.textContent=opts.fmt?opts.fmt(v):v.toFixed(2); }
-    }
-    input.addEventListener('input', refresh);
-    refresh();
-  }
-
-  // bind sliders
-  ['posX','posY','scale','rotation','rotX','rotY','rotZ','frequency','amplitude','phase','speed','zoom','persistence','brightness','volume'].forEach(k => {
-    bindSlider(k, k, {fmt:v => v.toFixed(k.includes('rotation') || k==='scale'?'2':'2')});
-  });
-  // Specific formats
-  document.getElementById('rotation').addEventListener('input', ()=>{ document.getElementById('v-rotation').textContent= parseFloat(document.getElementById('rotation').value).toFixed(0)+'°'; });
-  document.getElementById('rotX').addEventListener('input', ()=>{ document.getElementById('v-rotX').textContent= parseFloat(document.getElementById('rotX').value).toFixed(0)+'°'; });
-  document.getElementById('rotY').addEventListener('input', ()=>{ document.getElementById('v-rotY').textContent= parseFloat(document.getElementById('rotY').value).toFixed(0)+'°'; });
-  document.getElementById('rotZ').addEventListener('input', ()=>{ document.getElementById('v-rotZ').textContent= parseFloat(document.getElementById('rotZ').value).toFixed(0)+'°'; });
-  document.getElementById('phase').addEventListener('input', ()=>{ document.getElementById('v-phase').textContent= parseFloat(document.getElementById('phase').value).toFixed(0)+'°'; });
-  document.getElementById('persistence').addEventListener('input', ()=>{ document.getElementById('v-persistence').textContent= parseInt(document.getElementById('persistence').value); });
-  document.getElementById('brightness').addEventListener('input', ()=>{ document.getElementById('v-brightness').textContent= parseInt(document.getElementById('brightness').value); });
-  document.getElementById('volume').addEventListener('input', ()=>{ document.getElementById('v-volume').textContent= parseInt(document.getElementById('volume').value)+'%'; });
-
-  // Volume control
-  document.getElementById('volume').addEventListener('input', ()=>{ if(audioEl){ audioEl.volume=state.volume/100; } });
-  audioEl.volume=state.volume/100;
-
-  /* =================== Mode Tabs =================== */
-  const modeTabs=document.querySelectorAll('.mode-tab');
-  modeTabs.forEach(tab => {
-    tab.addEventListener('click', ()=>{
-      modeTabs.forEach(t=>t.classList.remove('active'));
-      tab.classList.add('active');
-      state.mode=tab.dataset.mode;
-      applyVisibility();
-      updateReadouts();
+  try {
+    await audioCtx.audioWorklet.addModule(url);
+    shapeAudioNode = new AudioWorkletNode(audioCtx, 'shape-audio-processor', {
+      outputChannelCount: [2]
     });
-  });
 
-  /* =================== 2D/3D toggles =================== */
-  const dimToggles=document.querySelectorAll('.toggle-btn[data-dim]');
-  dimToggles.forEach(btn => {
-    btn.addEventListener('click', ()=>{
-      dimToggles.forEach(b=>b.classList.remove('active'));
-      btn.classList.add('active');
-      state.is3D=btn.dataset.dim==='3d';
-      applyVisibility();
-      updateReadouts();
+    shapeAudioNode.connect(analyser);
+    updateShapeAudioParams();
+    isShapeAudioPlaying = true;
+    document.getElementById('btnShapeAudio').classList.add('primary');
+  } catch(e) {
+    console.error("AudioWorklet failed:", e);
+  }
+}
+
+function stopShapeAudio(){
+  if(shapeAudioNode){
+    shapeAudioNode.disconnect();
+    shapeAudioNode = null;
+  }
+  isShapeAudioPlaying = false;
+}
+
+function updateShapeAudioParams(){
+  if(shapeAudioNode && shapeAudioNode.port){
+    shapeAudioNode.port.postMessage({
+      frequency: state.frequency,
+      amplitude: state.amplitude,
+      shapeType: state.shapeType,
+      is3D: state.is3D,
+      scale: state.scale,
+      posX: state.posX,
+      posY: state.posY,
+      rotation: state.rotation,
+      rotX: state.rotX,
+      rotY: state.rotY,
+      rotZ: state.rotZ,
+      phaseOffset: state.phase
     });
-  });
+  }
+}
 
-  /* =================== Audio 1D/2D toggles =================== */
-  const audioDimButtons=document.querySelectorAll('[data-audiodim]');
-  audioDimButtons.forEach(btn => {
-    btn.addEventListener('click', ()=>{
-      audioDimButtons.forEach(b=>b.classList.remove('active'));
-      btn.classList.add('active');
-      state.audioDimension=btn.dataset.audiodim;
-      updateReadouts();
-    });
-  });
+/* =========================================================
+   DOM & UI SETUP
+   ========================================================= */
 
-  /* =================== Visibility =================== */
-  function applyVisibility() {
-    const m=state.mode;
-    document.getElementById('sec-waveform').classList.toggle('hidden', m!=='waveform');
-    document.getElementById('sec-shape').classList.toggle('hidden', m!=='shape');
-    document.getElementById('sec-audio').classList.toggle('hidden', m!=='audio');
-    document.getElementById('sec-transform').classList.toggle('hidden', m!=='shape');
-    document.getElementById('sec-signal').classList.toggle('hidden', m==='audio');
-    document.getElementById('field-rotation2d').classList.toggle('hidden', !(m==='shape' && !state.is3D));
-    document.getElementById('field-rotX').classList.toggle('hidden', !(m==='shape' && state.is3D));
-    document.getElementById('field-rotY').classList.toggle('hidden', !(m==='shape' && state.is3D));
-    document.getElementById('field-rotZ').classList.toggle('hidden', !(m==='shape' && state.is3D));
-    document.getElementById('audioDimensionField').classList.toggle('hidden', m!=='audio');
-    if(m==='shape'){
-      document.getElementById('chanLabel').textContent= state.is3D ?'CH1: X   CH2: Y (3D VECTOR)' :'CH1: X   CH2: Y (XY MODE)';
-    } else if(m==='audio' && state.audioDimension==='2d'){
-      document.getElementById('chanLabel').textContent='CH1: LEFT/X   CH2: RIGHT/Y (XY MODE)';
-    } else {
-      document.getElementById('chanLabel').textContent='CH1: Y   CH2: TIME';
+const el = id => document.getElementById(id);
+
+const readoutMode = el('readoutMode');
+const readoutSrc = el('readoutSrc');
+const readoutFps = el('readoutFps');
+const timeLabel = el('timeLabel');
+const chanLabel = el('chanLabel');
+
+function updateReadouts(){
+  readoutMode.innerHTML = `MODE: <b>${state.mode.toUpperCase()}</b>`;
+
+  if(state.mode === 'waveform'){
+    readoutSrc.innerHTML = `SRC: <b>${state.waveformType.toUpperCase()}</b>`;
+    chanLabel.textContent = 'CH1: TIME  CH2: Y';
+  } else if(state.mode === 'shape'){
+    readoutSrc.innerHTML = `SRC: <b>${state.shapeType.toUpperCase()} · ${state.is3D ? '3D' : '2D'}</b>`;
+    chanLabel.textContent = 'CH1: X  CH2: Y';
+  } else {
+    readoutSrc.innerHTML = `SRC: <b>AUDIO (${state.audioDimension.toUpperCase()})</b>`;
+    chanLabel.textContent = state.audioDimension === '2d' ? 'CH1: L  CH2: R' : 'CH1: SIGNAL';
+  }
+}
+
+function bindSlider(id, key, opts){
+  opts = opts || {};
+  const input = el(id);
+  const label = el('v-' + id);
+
+  function refresh(){
+    const v = parseFloat(input.value);
+    state[key !== undefined ? key : id] = v;
+
+    if(label){
+      label.textContent = opts.fmt ? opts.fmt(v) : v.toFixed(2);
     }
+    updateShapeAudioParams();
   }
 
-  /* =================== Readouts =================== */
-  function updateReadouts() {
-    document.getElementById('readoutMode').innerHTML='MODE: <b>'+state.mode.toUpperCase()+'</b>';
-    let src='';
-    if(state.mode==='waveform'){
-      src=state.waveformType.toUpperCase();
-    } else if(state.mode==='shape'){
-      src=state.shapeType.toUpperCase()+' · '+(state.is3D?'3D':'2D');
-    } else {
-      src='LINE IN · '+state.audioDimension.toUpperCase();
-    }
-    document.getElementById('readoutSrc').innerHTML='SRC: <b>'+src+'</b>';
-    document.getElementById('timeLabel').textContent='TIME/DIV: '+(1/state.zoom).toFixed(2)+'x';
-    applyVisibility();
-  }
+  input.addEventListener('input', refresh);
+  refresh();
+}
 
-  document.getElementById('zoom').addEventListener('input', updateReadouts);
+bindSlider('posX', 'posX', {fmt: v => v.toFixed(2)});
+bindSlider('posY', 'posY', {fmt: v => v.toFixed(2)});
+bindSlider('scale', 'scale', {fmt: v => v.toFixed(2)});
+bindSlider('rotation', 'rotation', {fmt: v => Math.round(v) + '°'});
+bindSlider('rotX', 'rotX', {fmt: v => Math.round(v) + '°'});
+bindSlider('rotY', 'rotY', {fmt: v => Math.round(v) + '°'});
+bindSlider('rotZ', 'rotZ', {fmt: v => Math.round(v) + '°'});
+bindSlider('frequency', 'frequency', {fmt: v => v.toFixed(1) + ' Hz'});
+bindSlider('amplitude', 'amplitude', {fmt: v => v.toFixed(2)});
+bindSlider('phase', 'phase', {fmt: v => Math.round(v) + '°'});
+bindSlider('speed', 'speed', {fmt: v => v.toFixed(2)});
+bindSlider('zoom', 'zoom', {fmt: v => v.toFixed(2) + '×'});
+bindSlider('persistence', 'persistence', {fmt: v => Math.round(v)});
+bindSlider('brightness', 'brightness', {fmt: v => Math.round(v)});
+bindSlider('volume', 'volume', {fmt: v => Math.round(v) + '%'});
 
-  /* =================== File Handling =================== */
-  const fileDrop=document.getElementById('fileDrop');
-  const audioFileInput=document.getElementById('audioFile');
+el('volume').addEventListener('input', () => {
+  audioEl.volume = state.volume / 100;
+});
+audioEl.volume = state.volume / 100;
 
-  fileDrop.addEventListener('click', ()=>{ audioFileInput.click(); });
-  let fileInputTimeout=null;
+el('waveformType').addEventListener('change', e => {
+  state.waveformType = e.target.value;
+  updateReadouts();
+});
 
-  audioFileInput.addEventListener('change', async e => {
-    const file = e.target.files && e.target.files[0];
-    if(!file) return;
-    const url=URL.createObjectURL(file);
-    audioEl.src=url;
-    audioEl.load();
-    fileDrop.textContent='♪ '+file.name;
-    fileDrop.classList.add('has-file');
-    await decodeAudioFile(file);
-    document.getElementById('audioDimensionField').classList.remove('hidden');
-    state.audioDimension='1d';
-    // activate correct toggle
-    document.querySelectorAll('[data-audiodim]').forEach(b => {
-      b.classList.toggle('active', b.dataset.audiodim==='1d');
-    });
+el('shapeType').addEventListener('change', e => {
+  state.shapeType = e.target.value;
+  updateReadouts();
+  updateShapeAudioParams();
+});
+
+/* Mode Tabs Switcher */
+const modeTabs = document.querySelectorAll('.mode-tab');
+modeTabs.forEach(tab => {
+  tab.addEventListener('click', () => {
+    modeTabs.forEach(t => t.classList.remove('active'));
+    tab.classList.add('active');
+
+    state.mode = tab.getAttribute('data-mode');
+
+    el('sec-waveform').classList.toggle('hidden', state.mode !== 'waveform');
+    el('sec-shape').classList.toggle('hidden', state.mode !== 'shape');
+    el('sec-audio').classList.toggle('hidden', state.mode !== 'audio');
+
     updateReadouts();
   });
+});
 
-  /* =================== Playback controls =================== */
-  document.getElementById('btnPlay').addEventListener('click', async () => {
-    if(!audioEl.src){ document.getElementById('fileDrop').textContent='Choose a file first…'; return; }
-    ensureAudioGraph();
-    if(audioCtx.state==='suspended'){ await audioCtx.resume(); }
-    audioEl.play();
+/* 2D / 3D Dimension Toggles */
+const dimBtns = document.querySelectorAll('[data-dim]');
+dimBtns.forEach(btn => {
+  btn.addEventListener('click', () => {
+    dimBtns.forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+
+    state.is3D = (btn.getAttribute('data-dim') === '3d');
+
+    el('field-rotation2d').classList.toggle('hidden', state.is3D);
+    el('field-rotX').classList.toggle('hidden', !state.is3D);
+    el('field-rotY').classList.toggle('hidden', !state.is3D);
+    el('field-rotZ').classList.toggle('hidden', !state.is3D);
+
+    updateReadouts();
+    updateShapeAudioParams();
   });
-  document.getElementById('btnPause').addEventListener('click', ()=>{ audioEl.pause(); });
-  document.getElementById('btnStop').addEventListener('click', ()=>{ audioEl.pause(); audioEl.currentTime=0; });
+});
 
-  /* =================== Seek =================== */
-  const seekInput=document.getElementById('seek');
-  let userSeeking=false;
-  seekInput.addEventListener('mousedown', ()=>{ userSeeking=true; });
-  seekInput.addEventListener('touchstart', ()=>{ userSeeking=true; }, {passive:true});
-  seekInput.addEventListener('change', ()=>{ if(audioEl.duration){ audioEl.currentTime=(seekInput.value/100)*audioEl.duration; } userSeeking=false; });
-  audioEl.addEventListener('timeupdate', ()=>{ if(userSeeking) return; const dur=audioEl.duration||0; const pct=dur>0?(audioEl.currentTime/dur)*100:0; seekInput.value=pct; document.getElementById('v-seek').textContent=fmtTime(audioEl.currentTime)+' / '+fmtTime(dur); });
-  audioEl.addEventListener('loadedmetadata', ()=>{ document.getElementById('v-seek').textContent=fmtTime(0)+' / '+fmtTime(audioEl.duration); });
+/* Audio Display Toggles */
+const audioDimBtns = document.querySelectorAll('[data-audiodim]');
+audioDimBtns.forEach(btn => {
+  btn.addEventListener('click', () => {
+    audioDimBtns.forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    state.audioDimension = btn.getAttribute('data-audiodim');
+    updateReadouts();
+  });
+});
 
-  /* =================== Shape Audio Generation =================== */
-  function stopShapeAudio() {
-    if(shapeAudioSource){ try{ shapeAudioSource.stop(); }catch(e){} shapeAudioSource=null; }
-    if(shapeAudioGain){ try{ shapeAudioGain.disconnect(); }catch(e){} shapeAudioGain=null; }
+/* Audio Playback Controls */
+el('btnShapeAudio').addEventListener('click', () => startShapeAudio());
+el('btnShapeStop').addEventListener('click', () => stopShapeAudio());
+
+el('btnPlay').addEventListener('click', () => {
+  ensureAudioGraph();
+  audioCtx.resume();
+  audioEl.play();
+});
+
+el('btnPause').addEventListener('click', () => audioEl.pause());
+el('btnStop').addEventListener('click', () => {
+  audioEl.pause();
+  audioEl.currentTime = 0;
+});
+
+const fileDrop = el('fileDrop');
+const audioFileInput = el('audioFile');
+
+fileDrop.addEventListener('click', () => audioFileInput.click());
+audioFileInput.addEventListener('change', e => {
+  const file = e.target.files[0];
+  if(file){
+    fileDrop.textContent = file.name;
+    fileDrop.classList.add('has-file');
+    audioEl.src = URL.createObjectURL(file);
   }
+});
 
-  async function playShapeAudio() {
-    if(!audioCtx){ audioCtx=new (window.AudioContext||window.webkitAudioContext)(); }
-    if(audioCtx.state==='suspended'){ await audioCtx.resume(); }
-    stopShapeAudio();
+audioEl.addEventListener('timeupdate', () => {
+  if(!userSeeking && audioEl.duration){
+    const pct = (audioEl.currentTime / audioEl.duration) * 100;
+    el('seek').value = pct;
+    el('v-seek').textContent = `${fmtTime(audioEl.currentTime)} / ${fmtTime(audioEl.duration)}`;
+  }
+});
 
-    const sampleRate=audioCtx.sampleRate;
-    const duration=1; // 1 sec
-    const totalSamples=Math.floor(sampleRate*duration);
-    const buffer=audioCtx.createBuffer(2, totalSamples, sampleRate);
-    const left=buffer.getChannelData(0);
-    const right=buffer.getChannelData(1);
-    const fn=ShapeFns[state.shapeType];
-    const freq=Math.max(0.1, state.frequency);
-    const phase=state.phase*Math.PI/180;
-    const amp=Math.min(1, Math.max(0.05, state.amplitude));
-    const rot=state.rotation*Math.PI/180;
-    const cosR=Math.cos(rot);
-    const sinR=Math.sin(rot);
-    for(let i=0;i<totalSamples;i++){
-      const t=i/sampleRate;
-      const tMod=((t*freq*Math.max(0.05, state.speed))+phase/(2*Math.PI))%1;
-      const p=fn(tMod);
-      const xr=p.x*Math.cos(rot)-p.y*Math.sin(rot);
-      const yr=p.x*Math.sin(rot)+p.y*Math.cos(rot);
-      left[i]=Math.max(-1, Math.min(1, xr*state.scale*amp*0.85));
-      right[i]=Math.max(-1, Math.min(1, yr*state.scale*amp*0.85));
+el('seek').addEventListener('input', () => {
+  userSeeking = true;
+});
+
+el('seek').addEventListener('change', () => {
+  if(audioEl.duration){
+    audioEl.currentTime = (parseFloat(el('seek').value) / 100) * audioEl.duration;
+  }
+  userSeeking = false;
+});
+
+function fmtTime(sec){
+  if(!isFinite(sec) || sec < 0) sec = 0;
+  const m = Math.floor(sec / 60);
+  const s = Math.floor(sec % 60);
+  return `${m}:${s < 10 ? '0' : ''}${s}`;
+}
+
+el('btnReset').addEventListener('click', () => {
+  Object.assign(state, defaults);
+
+  document.querySelectorAll('input[type=range]').forEach(input => {
+    if(defaults[input.id] !== undefined){
+      input.value = defaults[input.id];
+      input.dispatchEvent(new Event('input'));
     }
-    shapeAudioSource=audioCtx.createBufferSource();
-    shapeAudioSource.buffer=buffer;
-    shapeAudioSource.loop=true;
-    shapeAudioGain=audioCtx.createGain();
-    shapeAudioGain.gain.value= Math.min(1, state.volume/100)*0.65;
-    shapeAudioSource.connect(shapeAudioGain);
-    shapeAudioGain.connect(audioCtx.destination);
-    shapeAudioSource.start();
-  }
-  document.getElementById('btnShapeAudio').addEventListener('click', ()=>{ playShapeAudio(); });
-  document.getElementById('btnShapeStop').addEventListener('click', ()=>{ stopShapeAudio(); });
-  document.getElementById('volume').addEventListener('input', ()=>{ if(shapeAudioGain){ shapeAudioGain.gain.value= Math.min(1, state.volume/100)*0.65; } });
-
-  /* =================== Reset Defaults =================== */
-  document.getElementById('btnReset').addEventListener('click', ()=>{
-    Object.assign(state, defaults);
-    document.querySelectorAll('select').forEach(s=>{ s.value=defaults[s.id]; });
-    document.querySelectorAll('input[type=range]').forEach(r=>{ r.value=defaults[r.id]; r.dispatchEvent(new Event('input')); });
-    document.querySelectorAll('.mode-tab').forEach(t=>{ t.classList.toggle('active', t.dataset.mode===defaults.mode); });
-    document.querySelectorAll('.toggle-btn').forEach(b=>{ b.classList.toggle('active', b.dataset.dim==='3d'===defaults.is3D); });
-    document.querySelectorAll('[data-audiodim]').forEach(b=>{ b.classList.toggle('active', b.dataset.audiodim===defaults.audioDimension); });
-    audioEl.pause(); audioEl.currentTime=0; stopShapeAudio(); decodedAudio=null;
-    document.getElementById('fileDrop').textContent='Click to choose an audio file…'; document.getElementById('fileDrop').classList.remove('has-file');
-    document.getElementById('audioDimensionField').classList.add('hidden');
-    applyVisibility(); updateReadouts();
   });
 
-  /* =================== Visibility & Readouts =================== */
-  function applyVisibility() {
-    const m=state.mode;
-    document.getElementById('sec-waveform').classList.toggle('hidden', m!=='waveform');
-    document.getElementById('sec-shape').classList.toggle('hidden', m!=='shape');
-    document.getElementById('sec-audio').classList.toggle('hidden', m!=='audio');
-    document.getElementById('sec-transform').classList.toggle('hidden', m!=='shape');
-    document.getElementById('sec-signal').classList.toggle('hidden', m==='audio');
-    document.getElementById('field-rotation2d').classList.toggle('hidden', !(m==='shape' && !state.is3D));
-    document.getElementById('field-rotX').classList.toggle('hidden', !(m==='shape' && state.is3D));
-    document.getElementById('field-rotY').classList.toggle('hidden', !(m==='shape' && state.is3D));
-    document.getElementById('field-rotZ').classList.toggle('hidden', !(m==='shape' && state.is3D));
-    document.getElementById('audioDimensionField').classList.toggle('hidden', m!=='audio');
-    if(m==='shape'){
-      document.getElementById('chanLabel').textContent= state.is3D?'CH1: X   CH2: Y (3D VECTOR)':'CH1: X   CH2: Y (XY MODE)';
-    } else if(m==='audio' && state.audioDimension==='2d'){
-      document.getElementById('chanLabel').textContent='CH1: LEFT/X   CH2: RIGHT/Y (XY MODE)';
-    } else {
-      document.getElementById('chanLabel').textContent='CH1: Y   CH2: TIME';
-    }
-  }
-  function updateReadouts() {
-    document.getElementById('readoutMode').innerHTML='MODE: <b>'+state.mode.toUpperCase()+'</b>';
-    let src='';
-    if(state.mode==='waveform'){
-      src=state.waveformType.toUpperCase();
-    } else if(state.mode==='shape'){
-      src=state.shapeType.toUpperCase()+' · '+(state.is3D?'3D':'2D');
-    } else {
-      src='LINE IN · '+state.audioDimension.toUpperCase();
-    }
-    document.getElementById('readoutSrc').innerHTML='SRC: <b>'+src+'</b>';
-    document.getElementById('timeLabel').textContent='TIME/DIV: '+(1/state.zoom).toFixed(2)+'x';
-    applyVisibility();
-  }
+  el('waveformType').value = defaults.waveformType;
+  el('shapeType').value = defaults.shapeType;
 
-  document.getElementById('zoom').addEventListener('input', updateReadouts);
+  modeTabs[1].click();
+  dimBtns[0].click();
+  audioDimBtns[0].click();
 
-  /* =================== Main Render Loop =================== */
-  let lastT=performance.now();
-  let fpsCounter=0;
-  let fpsTimer=performance.now();
-  let fpsDisplay=0;
-  let clock=0;
-  let autoRotate2D=0;
-  let rippleCrawl=0;
-  let autoRotate3D=0;
+  stopShapeAudio();
+  updateReadouts();
+});
 
-  function traceStyle() {
-    const b=state.brightness/100;
-    traceCtx.lineWidth=1.6 + b*1.4;
-    traceCtx.strokeStyle=`rgba(120,255,175,${.55+b*.45})`;
-    traceCtx.shadowColor='rgba(90,255,160,.9)';
-    traceCtx.shadowBlur=4+b*16;
-    traceCtx.lineCap='round'; traceCtx.lineJoin='round';
-  }
+/* =========================================================
+   MAIN RENDER LOOP
+   ========================================================= */
 
-  function toScreen(nx, ny) {
-    const cx=cssW/2; const cy=cssH/2;
-    const half=Math.min(cssW,cssH)*0.42;
-    return [cx+nx*half, cy-ny*half];
-  }
+let lastTime = performance.now();
+let frameCount = 0;
+let lastFpsTime = performance.now();
+let animPhase = 0;
 
-  function drawWaveform(dt) {
-    const points=420;
-    scrollPhase+=state.speed*dt*0.6;
-    const freq=state.frequency;
-    const amp=state.amplitude;
-    const phaseRad=state.phase*Math.PI/180;
-    const fn=Wave[state.waveformType];
-    traceStyle();
-    traceCtx.beginPath();
-    for(let i=0;i<points;i++){
-      const xNorm=i/(points-1);
-      const angle=2*Math.PI*freq*(xNorm/state.zoom+scrollPhase)+phaseRad;
-      const y=amp*fn(angle);
-      const px=xNorm*cssW;
-      const py=cssH/2-y*(cssH/2)*0.88;
-      if(i===0){ traceCtx.moveTo(px,py); } else { traceCtx.lineTo(px,py); }
-    }
-    traceCtx.stroke();
-  }
-
-  function drawShape2D(dt) {
-    const shapeKey=state.shapeType;
-    const fn=ShapeFns[shapeKey];
-    const nSamples=ShapeSamples[shapeKey]||150;
-    autoRotate2D+=state.speed*dt*0.35;
-    rippleCrawl+=state.speed*dt*0.8;
-    const rotTotal=state.rotation*Math.PI/180+autoRotate2D;
-    const cosR=Math.cos(rotTotal);
-    const sinR=Math.sin(rotTotal);
-    const ripplePhase=state.phase*Math.PI/180+rippleCrawl;
-    const freq=state.frequency;
-    const amp=state.amplitude*0.5;
-    traceStyle();
-    traceCtx.beginPath();
-    for(let i=0;i<=nSamples;i++){
-      const t=(i%nSamples)/nSamples;
-      const p=fn(t);
-      const ripple=1+amp*Math.sin(freq*t*2*Math.PI+ripplePhase);
-      const xm=p.x*ripple;
-      const ym=p.y*ripple;
-      const xr=xm*cosR - ym*sinR;
-      const yr=xm*sinR + ym*cosR;
-      const xs=xr*state.scale+state.posX;
-      const ys=yr*state.scale+state.posY;
-      const [px,py]=toScreen(xs,ys);
-      if(i===0){ traceCtx.moveTo(px,py); } else { traceCtx.lineTo(px,py); }
-    }
-    traceCtx.stroke();
-  }
-
-  function rot3(p,ax,ay,az){
-    let [x,y,z]=p;
-    // Rotate around X
-    let y1=y*Math.cos(ax)-z*Math.sin(ax);
-    let z1=y*Math.sin(ax)+z*Math.cos(ax);
-    y=y1; z=z1;
-    // Rotate around Y
-    let x2=x*Math.cos(ay)+z*Math.sin(ay);
-    let z2=-x*Math.sin(ay)+z*Math.cos(ay);
-    x=x2; z=z2;
-    // Rotate around Z
-    let x3=x*Math.cos(az)-y*Math.sin(az);
-    let y3=x*Math.sin(az)+y*Math.cos(az);
-    x=x3; y=y3;
-    return [x,y,z];
-  }
-
-  function drawShape3D(dt) {
-    const geo=get3DGeometry(state.shapeType);
-    autoRotate3D+=state.speed*dt*0.5;
-    const ax=state.rotX*Math.PI/180;
-    const ay=state.rotY*Math.PI/180+autoRotate3D;
-    const az=state.rotZ*Math.PI/180;
-    const pulse=1+ (state.amplitude*0.4)*Math.sin(state.frequency*clock*2*Math.PI+state.phase*Math.PI/180);
-    traceStyle();
-    for(const stroke of geo){
-      traceCtx.beginPath();
-      for(let i=0;i<stroke.length;i++){
-        const p0=stroke[i];
-        const p=[p0[0]*pulse,p0[1]*pulse,p0[2]*pulse];
-        const r=rot3(p,ax,ay,az);
-        const persp=1/(2 - r[2]*0.55);
-        const xs=r[0]*persp*state.scale+state.posX;
-        const ys=r[1]*persp*state.scale+state.posY;
-        const [px,py]=toScreen(xs,ys);
-        if(i===0){ traceCtx.moveTo(px,py); } else { traceCtx.lineTo(px,py); }
-      }
-      traceCtx.stroke();
-    }
-  }
-
-  function drawAudio1D() {
-    traceStyle();
-    traceCtx.beginPath();
-    if(!audioReady || !analyser || (audioEl.paused && audioEl.currentTime===0)){
-      const y=cssH/2;
-      traceCtx.moveTo(0,y); traceCtx.lineTo(cssW,y); traceCtx.stroke(); return;
-    }
-    analyser.getByteTimeDomainData(audioDataArray);
-    const total=audioDataArray.length;
-    const visible=Math.max(64, Math.floor(total/states.zoom));
-    const start=Math.max(0, Math.floor((total-visible)/2));
-    const count=Math.min(visible, total-start);
-    for(let i=0;i<count;i++){
-      const sample=(audioDataArray[start+i]-128)/128;
-      const xNorm=i/(count-1);
-      const px=xNorm*cssW;
-      const py=cssH/2-sample*(cssH/2)*0.88;
-      if(i===0){ traceCtx.moveTo(px,py); } else { traceCtx.lineTo(px,py); }
-    }
-    traceCtx.stroke();
-  }
-
-  function drawAudio2D() {
-    traceStyle();
-    traceCtx.beginPath();
-    if(!decodedAudio){
-      const x=cssW/2; const y=cssH/2;
-      traceCtx.moveTo(x-30,y); traceCtx.lineTo(x+30,y); traceCtx.stroke(); return;
-    }
-    const channels=decodedAudio.numberOfChannels;
-    const left=decodedAudio.getChannelData(0);
-    const right=channels>1?decodedAudio.getChannelData(1):left;
-    const sr=decodedAudio.sampleRate;
-    const currentTime=audioEl.currentTime;
-    const center=Math.floor(currentTime*sr);
-    const windowSamples=Math.min(4096, Math.max(512, Math.floor(sr/Math.max(0.25, state.zoom)/4)));
-    const half=Math.floor(windowSamples/2);
-    let start=Math.max(0, center-half);
-    if(start+windowSamples>=left.length){ start=Math.max(0,left.length-windowSamples); }
-    const count=Math.min(windowSamples, left.length-start);
-    const monoDelay=Math.floor(count*0.17);
-    for(let i=0;i<count;i++){
-      const xSample=left[start+i]||0;
-      let ySample;
-      if(channels>1){ ySample=right[start+i]||0; } else { const yi=Math.min(count-1,i+monoDelay); ySample=left[start+yi]||0; }
-      const px=cssW/2 + xSample*cssW*0.43;
-      const py=cssH/2 - ySample*cssH*0.43;
-      if(i===0){ traceCtx.moveTo(px,py); } else { traceCtx.lineTo(px,py); }
-    }
-    traceCtx.stroke();
-  }
-
-  function drawAudio() {
-    if(startsWith('2d')){ drawAudio2D(); } else { drawAudio1D(); }
-  }
-
-  /* ======================= Main Loop ======================= */
-  function render(now) {
-    const dt=Math.min(0.005, (now-lastT)/1000); // 200 FPS (max)
-    lastT=now;
-    clock+=dt;
-
-    // FPS calculation
-    fpsCounter++;
-    if(now - fpsTimer > 5){ // update every 5ms (~200Hz)
-      fpsDisplay=Math.round(fpsCounter/(now - fpsTimer)*1000);
-      document.getElementById('readoutFps').innerHTML='FPS: <b>'+fpsDisplay+'</b>';
-      fpsCounter=0;
-      fpsTimer=now;
-    }
-    // Draw grid
-    drawGrid();
-
-    // Phosphor fade
-    const fadeAlpha=1 - Math.min(.985, (state.persistence/100)*.985);
-    traceCtx.globalCompositeOperation='destination-out';
-    traceCtx.fillStyle=`rgba(0,0,0,${Math.max(.015,fadeAlpha)})`;
-    traceCtx.fillRect(0,0,cssW,cssH);
-    traceCtx.globalCompositeOperation='source-over';
-
-    // Draw source
-    if (state.mode==='waveform') { drawWaveform(dt); }
-    else if (state.mode==='shape') { if (state.is3D) { drawShape3D(dt); } else { drawShape2D(dt); } }
-    else { drawAudio(); }
-
-    // Apply glow
-    ctx.globalCompositeOperation='lighter';
-    ctx.drawImage(traceCanvas,0,0,cssW,cssH);
-    ctx.globalCompositeOperation='source-over';
-
-    requestAnimationFrame(render);
-  }
+function render(now){
   requestAnimationFrame(render);
+
+  const dt = (now - lastTime) / 1000;
+  lastTime = now;
+
+  frameCount++;
+  if(now - lastFpsTime >= 500){
+    const fps = Math.round((frameCount * 1000) / (now - lastFpsTime));
+    readoutFps.innerHTML = `FPS: <b>${fps}</b>`;
+    frameCount = 0;
+    lastFpsTime = now;
+  }
+
+  animPhase += dt * state.speed * state.frequency;
+
+  // Clear trace canvas with persistence decay
+  const fadeAlpha = Math.max(0.02, 1.0 - (state.persistence / 100));
+  traceCtx.fillStyle = `rgba(4, 20, 12, ${fadeAlpha})`;
+  traceCtx.fillRect(0, 0, cssW, cssH);
+
+  // Phosphor drawing styling
+  traceCtx.lineWidth = 1.8;
+  const br = state.brightness / 100;
+  traceCtx.strokeStyle = `rgba(77, 255, 160, ${br})`;
+  traceCtx.shadowColor = 'rgba(77, 255, 160, 0.8)';
+  traceCtx.shadowBlur = 6 * br;
+
+  const centerX = cssW / 2 + state.posX * (cssW / 2);
+  const centerY = cssH / 2 - state.posY * (cssH / 2);
+  const baseRadius = (Math.min(cssW, cssH) * 0.35 * state.scale) / state.zoom;
+
+  traceCtx.beginPath();
+
+  if(state.mode === 'waveform'){
+    const samples = 300;
+    const waveFn = Wave[state.waveformType];
+    const pRad = state.phase * Math.PI / 180;
+
+    for(let i = 0; i < samples; i++){
+      const t = i / samples;
+      const x = t * cssW;
+      const angle = t * Math.PI * 4 * state.zoom + animPhase + pRad;
+      const y = centerY - waveFn(angle) * baseRadius * state.amplitude;
+
+      if(i === 0) traceCtx.moveTo(x, y);
+      else traceCtx.lineTo(x, y);
+    }
+  } 
+  else if(state.mode === 'shape'){
+    const pRad = state.phase * Math.PI / 180;
+
+    if(!state.is3D){
+      const fn = ShapeFns[state.shapeType];
+      const samples = 200;
+      const rotRad = state.rotation * Math.PI / 180;
+
+      for(let i = 0; i <= samples; i++){
+        const t = i / samples;
+        const pt = fn(t);
+
+        let x = pt.x * baseRadius * state.amplitude;
+        let y = pt.y * baseRadius * state.amplitude;
+
+        if(rotRad !== 0){
+          const rx = x * Math.cos(rotRad) - y * Math.sin(rotRad);
+          const ry = x * Math.sin(rotRad) + y * Math.cos(rotRad);
+          x = rx; y = ry;
+        }
+
+        if(pRad !== 0){
+          const px = x * Math.cos(pRad) - y * Math.sin(pRad);
+          const py = x * Math.sin(pRad) + y * Math.cos(pRad);
+          x = px; y = py;
+        }
+
+        const canvasX = centerX + x;
+        const canvasY = centerY - y;
+
+        if(i === 0) traceCtx.moveTo(canvasX, canvasY);
+        else traceCtx.lineTo(canvasX, canvasY);
+      }
+    } else {
+      const geometry = get3DGeometry(state.shapeType);
+      const rx = state.rotX + Math.sin(animPhase * 0.1) * 20;
+      const ry = state.rotY + animPhase * 10;
+      const rz = state.rotZ;
+
+      geometry.forEach(stroke => {
+        for(let i = 0; i < stroke.length; i++){
+          const pt3D = stroke[i];
+          const proj = project3D(pt3D, rx, ry, rz);
+
+          let x = proj.x * baseRadius * state.amplitude;
+          let y = proj.y * baseRadius * state.amplitude;
+
+          if(pRad !== 0){
+            const px = x * Math.cos(pRad) - y * Math.sin(pRad);
+            const py = x * Math.sin(pRad) + y * Math.cos(pRad);
+            x = px; y = py;
+          }
+
+          const canvasX = centerX + x;
+          const canvasY = centerY - y;
+
+          if(i === 0) traceCtx.moveTo(canvasX, canvasY);
+          else traceCtx.lineTo(canvasX, canvasY);
+        }
+      });
+    }
+  } 
+  else if(state.mode === 'audio'){
+    if(analyser && audioDataArray){
+      analyser.getByteTimeDomainData(audioDataArray);
+      const len = audioDataArray.length;
+
+      if(state.audioDimension === '1d'){
+        for(let i = 0; i < len; i++){
+          const v = (audioDataArray[i] - 128) / 128.0;
+          const x = (i / len) * cssW;
+          const y = centerY - v * baseRadius * state.amplitude * 2;
+
+          if(i === 0) traceCtx.moveTo(x, y);
+          else traceCtx.lineTo(x, y);
+        }
+      } else {
+        const half = Math.floor(len / 2);
+        for(let i = 0; i < half; i++){
+          const vx = (audioDataArray[i] - 128) / 128.0;
+          const vy = (audioDataArray[i + half] - 128) / 128.0;
+
+          const x = centerX + vx * baseRadius * state.amplitude * 2;
+          const y = centerY - vy * baseRadius * state.amplitude * 2;
+
+          if(i === 0) traceCtx.moveTo(x, y);
+          else traceCtx.lineTo(x, y);
+        }
+      }
+    }
+  }
+
+  traceCtx.stroke();
+
+  // Render back to main CRT display
+  drawGrid();
+  ctx.drawImage(traceCanvas, 0, 0, cssW, cssH);
+}
+
+// Start Main App Loop
+updateReadouts();
+requestAnimationFrame(render);
 
 })();
 </script>
+
 </body>
 </html>
