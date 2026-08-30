@@ -593,7 +593,7 @@ footer{
         <h3>Signal & Audio Output</h3>
         <div class="field">
           <div class="btn-row">
-            <button class="btn primary" id="btnAudioToggle">🔊 Mute Synth Audio</button>
+            <button class="btn primary" id="btnAudioToggle">🔊 Play Synth Audio</button>
           </div>
         </div>
 
@@ -854,6 +854,152 @@ const ShapeFns = {
   }
 };
 
+/* 3D ENGINE PIPELINE */
+function buildExtrudedShape(shapeKey){
+  const vertMap = { square: 4, triangle: 3, pentagon: 5, hexagon: 6, octagon: 8, star: 10, star8: 16 };
+  const n = vertMap[shapeKey] || 8;
+  const depth = 0.5;
+  const front = [], back = [];
+  const fn = ShapeFns[shapeKey] || ShapeFns.circle;
+
+  for(let i = 0; i < n; i++){
+    const p = fn(i / n);
+    front.push([p.x, p.y, depth]);
+    back.push([p.x, p.y, -depth]);
+  }
+
+  const strokes = [
+    front.concat([front[0]]),
+    back.concat([back[0]])
+  ];
+  for(let i = 0; i < n; i++) strokes.push([front[i], back[i]]);
+  return strokes;
+}
+
+function buildTetrahedron(){
+  const s = 1 / Math.sqrt(2);
+  const v = [[1, 0, -s], [-1, 0, -s], [0, 1, s], [0, -1, s]];
+  return [
+    [v[0], v[1], v[2], v[0]],
+    [v[0], v[3], v[1]],
+    [v[2], v[3]]
+  ];
+}
+
+function buildOctahedron(){
+  const v = [[1,0,0], [-1,0,0], [0,1,0], [0,-1,0], [0,0,1], [0,0,-1]];
+  return [
+    [v[0], v[2], v[1], v[3], v[0]],
+    [v[4], v[0]], [v[4], v[1]], [v[4], v[2]], [v[4], v[3]],
+    [v[5], v[0]], [v[5], v[1]], [v[5], v[2]], [v[5], v[3]]
+  ];
+}
+
+function buildIcosahedron(){
+  const t = PHI;
+  const v = [
+    [-1, t, 0], [1, t, 0], [-1, -t, 0], [1, -t, 0],
+    [0, -1, t], [0, 1, t], [0, -1, -t], [0, 1, -t],
+    [t, 0, -1], [t, 0, 1], [-t, 0, -1], [-t, 0, 1]
+  ].map(p => {
+    const len = Math.hypot(...p);
+    return [p[0]/len, p[1]/len, p[2]/len];
+  });
+
+  const edges = [
+    [0,11],[0,5],[0,1],[0,7],[0,10],[1,5],[5,11],[11,10],[10,7],[7,1],
+    [3,9],[3,4],[3,2],[3,6],[3,8],[4,9],[9,8],[8,6],[6,2],[2,4],
+    [4,5],[4,11],[9,1],[9,5],[8,7],[8,1],[6,10],[6,7],[2,11],[2,10]
+  ];
+
+  return edges.map(e => [v[e[0]], v[e[1]]]);
+}
+
+function buildTorus(){
+  const strokes = [];
+  const R = 0.7, r = 0.3;
+  const segsU = 20, segsV = 12;
+  for(let i = 0; i < segsU; i++){
+    const u = (i / segsU) * 2 * Math.PI;
+    const ring = [];
+    for(let j = 0; j <= segsV; j++){
+      const v = (j / segsV) * 2 * Math.PI;
+      const x = (R + r * Math.cos(v)) * Math.cos(u);
+      const y = (R + r * Math.cos(v)) * Math.sin(u);
+      const z = r * Math.sin(v);
+      ring.push([x, y, z]);
+    }
+    strokes.push(ring);
+  }
+  return strokes;
+}
+
+function buildMobius(){
+  const strokes = [];
+  const uSegs = 32, vSegs = 6;
+  for(let j = 0; j <= vSegs; j++){
+    const v = -0.3 + (j / vSegs) * 0.6;
+    const strip = [];
+    for(let i = 0; i <= uSegs; i++){
+      const u = (i / uSegs) * 2 * Math.PI;
+      const x = (1 + (v / 2) * Math.cos(u / 2)) * Math.cos(u);
+      const y = (1 + (v / 2) * Math.cos(u / 2)) * Math.sin(u);
+      const z = (v / 2) * Math.sin(u / 2);
+      strip.push([x * 0.7, y * 0.7, z * 0.7]);
+    }
+    strokes.push(strip);
+  }
+  return strokes;
+}
+
+function buildSphere(){
+  const strokes = [];
+  const rings = 10, segs = 20;
+  for(let i = 1; i < rings; i++){
+    const phi = -Math.PI / 2 + (i * Math.PI) / rings;
+    const ring = [];
+    for(let j = 0; j <= segs; j++){
+      const theta = (j * 2 * Math.PI) / segs;
+      ring.push([Math.cos(phi)*Math.cos(theta), Math.sin(phi), Math.cos(phi)*Math.sin(theta)]);
+    }
+    strokes.push(ring);
+  }
+  return strokes;
+}
+
+const Shape3DCache = {};
+function get3DGeometry(shapeKey){
+  if(Shape3DCache[shapeKey]) return Shape3DCache[shapeKey];
+  let geom;
+  switch(shapeKey){
+    case 'circle': geom = buildSphere(); break;
+    case 'tetrahedron': geom = buildTetrahedron(); break;
+    case 'octahedron': geom = buildOctahedron(); break;
+    case 'icosahedron': geom = buildIcosahedron(); break;
+    case 'torus': geom = buildTorus(); break;
+    case 'mobius': geom = buildMobius(); break;
+    default: geom = buildExtrudedShape(shapeKey); break;
+  }
+  Shape3DCache[shapeKey] = geom;
+  return geom;
+}
+
+function project3D(pt, rxDeg, ryDeg, rzDeg){
+  const rx = rxDeg * Math.PI / 180, ry = ryDeg * Math.PI / 180, rz = rzDeg * Math.PI / 180;
+  const cx = Math.cos(rx), sx = Math.sin(rx);
+  const cy = Math.cos(ry), sy = Math.sin(ry);
+  const cz = Math.cos(rz), sz = Math.sin(rz);
+
+  let x = pt[0], y = pt[1], z = pt[2];
+  let y1 = y * cx - z * sx, z1 = y * sx + z * cx;
+  let x2 = x * cy + z1 * sy, z2 = -x * sy + z1 * cy;
+  let x3 = x2 * cz - y1 * sz, y3 = x2 * sz + y1 * cz;
+
+  const d = 3.5;
+  const scale = d / (d + z2);
+  return { x: x3 * scale, y: y3 * scale };
+}
+
 /* AUDIO ENGINE FOR FREQUENCY PLAYBACK */
 let synthCtx = null;
 let synthOsc = null;
@@ -928,7 +1074,7 @@ const btnAudioToggle = el('btnAudioToggle');
 btnAudioToggle.addEventListener('click', () => {
   initSynth();
   state.synthAudioActive = !state.synthAudioActive;
-  btnAudioToggle.textContent = state.synthAudioActive ? '🔊 Synth Audio Active' : '🔇 Mute Synth Audio';
+  btnAudioToggle.textContent = state.synthAudioActive ? '🔊 Synth Audio Active' : '🔇 Play Synth Audio';
   btnAudioToggle.classList.toggle('primary', !state.synthAudioActive);
   updateSynthParams();
 });
@@ -970,30 +1116,6 @@ dimBtns.forEach(btn => {
   });
 });
 
-/* EXTERNAL AUDIO INPUT HANDLERS */
-const fileDrop = el('fileDrop');
-const audioFileInput = el('audioFile');
-const audioPlayer = el('audioPlayer');
-const btnPlay = el('btnPlay');
-const btnPause = el('btnPause');
-const btnStop = el('btnStop');
-
-fileDrop.addEventListener('click', () => audioFileInput.click());
-audioFileInput.addEventListener('change', (e) => {
-  if (e.target.files.length) {
-    const file = e.target.files[0];
-    audioPlayer.src = URL.createObjectURL(file);
-    fileDrop.textContent = `File: ${file.name}`;
-  }
-});
-
-btnPlay.addEventListener('click', () => audioPlayer.play());
-btnPause.addEventListener('click', () => audioPlayer.pause());
-btnStop.addEventListener('click', () => {
-  audioPlayer.pause();
-  audioPlayer.currentTime = 0;
-});
-
 /* RENDERING LOOP */
 let animTime = 0;
 function render(){
@@ -1008,18 +1130,14 @@ function render(){
   const cy = cssH / 2 - state.posY * (cssH / 2);
   const baseRadius = (Math.min(cssW, cssH) * 0.3) * state.scale;
 
-  ctx.beginPath();
-  const samples = 400;
-
-  for(let i = 0; i <= samples; i++){
-    const t = i / samples;
-    let x = 0, y = 0;
-
-    if(state.mode === 'waveform'){
-      const period = (1 / state.frequency) * 1000;
+  if(state.mode === 'waveform'){
+    ctx.beginPath();
+    const samples = 400;
+    for(let i = 0; i <= samples; i++){
+      const t = i / samples;
       const angle = (t * Math.PI * 2 * (100 / state.zoom));
-      
-      x = (t - 0.5) * cssW * 0.8;
+      let x = (t - 0.5) * cssW * 0.8;
+      let y = 0;
       if(state.waveformType === 'sine') y = Math.sin(angle);
       else if(state.waveformType === 'square') y = Math.sin(angle) >= 0 ? 1 : -1;
       else if(state.waveformType === 'triangle') y = Math.asin(Math.sin(angle)) * (2 / Math.PI);
@@ -1028,25 +1146,50 @@ function render(){
       y *= baseRadius * state.amplitude;
       x += cx;
       y = cy - y;
-    } else if(state.mode === 'shape'){
+      if(i === 0) ctx.moveTo(x, y);
+      else ctx.lineTo(x, y);
+    }
+    ctx.stroke();
+  } else if(state.mode === 'shape'){
+    if(state.is3D){
+      const geom = get3DGeometry(state.shapeType);
+      const spinSpeed = animTime * state.speed * 50;
+      const rx = state.rotX + spinSpeed;
+      const ry = state.rotY + spinSpeed;
+      const rz = state.rotZ;
+
+      geom.forEach(stroke => {
+        ctx.beginPath();
+        stroke.forEach((pt, idx) => {
+          const projected = project3D(pt, rx, ry, rz);
+          const x = cx + projected.x * baseRadius;
+          const y = cy - projected.y * baseRadius;
+          if(idx === 0) ctx.moveTo(x, y);
+          else ctx.lineTo(x, y);
+        });
+        ctx.stroke();
+      });
+    } else {
+      ctx.beginPath();
+      const samples = 400;
       const fn = ShapeFns[state.shapeType] || ShapeFns.circle;
-      const p = fn(t);
       const rot = (state.rotation * Math.PI) / 180 + animTime * state.speed;
 
-      x = p.x * Math.cos(rot) - p.y * Math.sin(rot);
-      y = p.x * Math.sin(rot) + p.y * Math.cos(rot);
-
-      x = cx + x * baseRadius;
-      y = cy - y * baseRadius;
+      for(let i = 0; i <= samples; i++){
+        const t = i / samples;
+        const p = fn(t);
+        let x = p.x * Math.cos(rot) - p.y * Math.sin(rot);
+        let y = p.x * Math.sin(rot) + p.y * Math.cos(rot);
+        x = cx + x * baseRadius;
+        y = cy - y * baseRadius;
+        if(i === 0) ctx.moveTo(x, y);
+        else ctx.lineTo(x, y);
+      }
+      ctx.stroke();
     }
-
-    if(i === 0) ctx.moveTo(x, y);
-    else ctx.lineTo(x, y);
   }
 
-  ctx.stroke();
   ctx.shadowBlur = 0;
-
   animTime += 0.02;
   requestAnimationFrame(render);
 }
