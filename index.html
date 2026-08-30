@@ -74,7 +74,7 @@ html,body{
     inset 0 1px 0 rgba(255,255,255,.08),
     inset 0 -2px 6px rgba(0,0,0,.7);
   display:grid;
-  grid-template-columns:minmax(0,1fr) 300px;
+  grid-template-columns:minmax(0,1fr) 320px;
   gap:14px;
 }
 
@@ -503,15 +503,15 @@ footer{
           <div class="field-row"><span>Lissajous & Presets</span></div>
           <select id="presetType">
             <option value="custom">-- Geometry Presets --</option>
-            <optgroup label="Lissajous Patterns (X:Y Phase)">
-              <option value="straight_line">Straight Line (1:1, 0°)</option>
-              <option value="perfect_circle">Perfect Circle (1:1, 90°)</option>
-              <option value="ellipse">Ellipse (1:1, 45°)</option>
-              <option value="figure_eight">Figure Eight (2:1)</option>
-              <option value="three_loop">Three-Loop Clover (3:1)</option>
-              <option value="four_loop">Four-Loop Crown (4:1)</option>
-              <option value="complex_lattice">Complex Lattice (5:7)</option>
-              <option value="bowtie">Lissajous Bowtie (3:2)</option>
+            <optgroup label="Lissajous Patterns (X:Y Ratio)">
+              <option value="straight_line">Straight Line (1:1, 0° Phase)</option>
+              <option value="perfect_circle">Perfect Circle (1:1, 90° Phase)</option>
+              <option value="ellipse">Ellipse (1:1, 45° Phase)</option>
+              <option value="figure_eight">Figure Eight (2:1 Ratio)</option>
+              <option value="three_loop">Three-Loop Clover (3:1 Ratio)</option>
+              <option value="four_loop">Four-Loop Crown (4:1 Ratio)</option>
+              <option value="complex_lattice">Complex Lattice (5:7 Ratio)</option>
+              <option value="bowtie">Lissajous Bowtie (3:2 Ratio)</option>
             </optgroup>
             <optgroup label="Component Testing (Octopus Tracker)">
               <option value="diode">Diode / Transistor Junction (Right Angle)</option>
@@ -551,7 +551,7 @@ footer{
               <option value="heart">Heart Shape</option>
               <option value="trefoil">Trefoil Knot</option>
               <option value="rose">Rose Curve (5 Petals)</option>
-              <option value="lissajous">Lissajous Curve</option>
+              <option value="lissajous">Lissajous Curve (3:4)</option>
               <option value="spiral">Archimedean Spiral</option>
             </optgroup>
           </select>
@@ -794,7 +794,7 @@ function applyDecayAndGrid(){
   ctx.stroke();
 }
 
-/* 2D GEOMETRIES (SINGLE PATH ENCLOSURES) */
+/* 2D GEOMETRIES & MATH HELPERS */
 function pointOnPolygon(t, verts){
   const n = verts.length;
   let p = ((t * n) % n + n) % n;
@@ -877,8 +877,9 @@ const ShapeFns = {
   }
 };
 
-/* LISSAJOUS & PRESET GENERATORS */
+/* LISSAJOUS & ACCURATE PRESET GENERATORS */
 const PresetFns = {
+  // Pure Lissajous Curves
   straight_line: t => { const a = Math.sin(t * 2 * Math.PI); return { x: a, y: a }; },
   perfect_circle: t => ({ x: Math.cos(t * 2 * Math.PI), y: Math.sin(t * 2 * Math.PI) }),
   ellipse: t => { const a = t * 2 * Math.PI; return { x: Math.sin(a), y: Math.sin(a + Math.PI / 4) }; },
@@ -888,26 +889,39 @@ const PresetFns = {
   complex_lattice: t => { const a = t * 2 * Math.PI; return { x: Math.sin(5 * a), y: Math.sin(7 * a + Math.PI / 4) }; },
   bowtie: t => { const a = t * 2 * Math.PI; return { x: Math.sin(2 * a), y: Math.sin(3 * a) }; },
   
-  // Component Testing Profiles
+  // Component Testing Profiles (Octopus / Tracker)
   diode: t => {
-    const a = Math.sin(t * 2 * Math.PI);
-    return { x: Math.max(0, a), y: Math.min(0, a) };
+    // Exact PN-Junction Knee: Horizontal trace along X (reverse bias & V_F offset) turning vertically up at V_F conduction threshold
+    const v = Math.sin(t * 2 * Math.PI);
+    const vf = 0.2;
+    if(v < vf){
+      return { x: v, y: -0.7 };
+    } else {
+      return { x: vf, y: -0.7 + (v - vf) * 3.5 };
+    }
   },
-  open_circuit: t => { const a = (t - 0.5) * 2; return { x: a, y: 0 }; },
-  short_circuit: t => { const a = (t - 0.5) * 2; return { x: 0, y: a }; },
-  resistor: t => { const a = (t - 0.5) * 2; return { x: a, y: a * 0.75 }; },
+  open_circuit: t => { const a = Math.sin(t * 2 * Math.PI); return { x: a, y: 0 }; },
+  short_circuit: t => { const a = Math.sin(t * 2 * Math.PI); return { x: 0, y: a }; },
+  resistor: t => { const a = Math.sin(t * 2 * Math.PI); return { x: a, y: a * 0.75 }; },
   reactive_cap: t => { const a = t * 2 * Math.PI; return { x: 0.8 * Math.cos(a), y: 0.5 * Math.sin(a) }; },
 
   // Vector Art Visuals
   mushroom: t => {
-    const a = t * 2 * Math.PI;
     if (t < 0.6) {
       const capA = (t / 0.6) * Math.PI;
-      return { x: Math.cos(capA) * 0.9, y: Math.sin(capA) * 0.6 + 0.1 };
+      return { x: Math.cos(capA) * 0.85, y: Math.sin(capA) * 0.55 + 0.1 };
     } else {
       const stemT = (t - 0.6) / 0.4;
-      const x = (stemT < 0.5) ? -0.25 : 0.25;
-      const y = (stemT < 0.5) ? (0.1 - stemT * 1.2) : (-0.5 + (stemT - 0.5) * 1.2);
+      let x, y;
+      if (stemT < 0.25) {
+        x = -0.25; y = 0.1 - (stemT / 0.25) * 0.6;
+      } else if (stemT < 0.5) {
+        x = -0.25 + ((stemT - 0.25) / 0.25) * 0.5; y = -0.5;
+      } else if (stemT < 0.75) {
+        x = 0.25; y = -0.5 + ((stemT - 0.5) / 0.25) * 0.6;
+      } else {
+        x = 0.25 - ((stemT - 0.75) / 0.25) * 0.5; y = 0.1;
+      }
       return { x, y };
     }
   },
@@ -1105,7 +1119,7 @@ function samplePointAt(t){
   }
 }
 
-/* REAL-TIME AUDIO SYNTHESIZER & ACCURATE ANALYZER */
+/* REAL-TIME AUDIO SYNTHESIZER & ACCURATE STEREO ANALYZER */
 let audioCtx = null;
 let scriptNode = null;
 let masterGain = null;
@@ -1130,8 +1144,8 @@ function initAudioEngine(){
   analyserR = audioCtx.createAnalyser();
   analyserL.fftSize = 4096;
   analyserR.fftSize = 4096;
-  analyserL.smoothingTimeConstant = 0.2;
-  analyserR.smoothingTimeConstant = 0.2;
+  analyserL.smoothingTimeConstant = 0.1;
+  analyserR.smoothingTimeConstant = 0.1;
 
   splitterNode = audioCtx.createChannelSplitter(2);
 
@@ -1346,16 +1360,13 @@ let animTime = 0;
 function render(){
   applyDecayAndGrid();
 
-  ctx.strokeStyle = '#55ff99';
   ctx.lineWidth = 2;
-  ctx.shadowColor = '#55ff99';
   ctx.shadowBlur = 8;
 
   const cx = cssW / 2;
   const cy = cssH / 2;
   const baseRadius = Math.min(cssW, cssH) * 0.35;
 
-  ctx.beginPath();
   if(state.mode === 'audio' && analyserL && analyserR){
     const timeDataL = new Uint8Array(analyserL.frequencyBinCount);
     const timeDataR = new Uint8Array(analyserR.frequencyBinCount);
@@ -1363,6 +1374,9 @@ function render(){
     analyserR.getByteTimeDomainData(timeDataR);
 
     if(state.audioDimension === '2d'){
+      ctx.strokeStyle = '#55ff99';
+      ctx.shadowColor = '#55ff99';
+      ctx.beginPath();
       const len = Math.min(timeDataL.length, timeDataR.length);
       for(let i = 0; i < len; i++){
         const xVal = (timeDataL[i] - 128) / 128;
@@ -1372,7 +1386,12 @@ function render(){
         if(i === 0) ctx.moveTo(screenX, screenY);
         else ctx.lineTo(screenX, screenY);
       }
+      ctx.stroke();
     } else {
+      // 1D Dual-Channel Overlap Trace
+      ctx.strokeStyle = '#55ff99';
+      ctx.shadowColor = '#55ff99';
+      ctx.beginPath();
       for(let i = 0; i < timeDataL.length; i++){
         const x = (i / timeDataL.length - 0.5) * cssW * 0.9;
         const y = ((timeDataL[i] - 128) / 128) * baseRadius * state.scale;
@@ -1381,8 +1400,25 @@ function render(){
         if(i === 0) ctx.moveTo(screenX, screenY);
         else ctx.lineTo(screenX, screenY);
       }
+      ctx.stroke();
+
+      ctx.strokeStyle = '#ff9c3d';
+      ctx.shadowColor = '#ff9c3d';
+      ctx.beginPath();
+      for(let i = 0; i < timeDataR.length; i++){
+        const x = (i / timeDataR.length - 0.5) * cssW * 0.9;
+        const y = ((timeDataR[i] - 128) / 128) * baseRadius * state.scale;
+        const screenX = cx + x;
+        const screenY = cy - y;
+        if(i === 0) ctx.moveTo(screenX, screenY);
+        else ctx.lineTo(screenX, screenY);
+      }
+      ctx.stroke();
     }
   } else {
+    ctx.strokeStyle = '#55ff99';
+    ctx.shadowColor = '#55ff99';
+    ctx.beginPath();
     const samples = 1000;
     for(let i = 0; i <= samples; i++){
       const t = i / samples;
@@ -1394,8 +1430,8 @@ function render(){
       if(i === 0) ctx.moveTo(screenX, screenY);
       else ctx.lineTo(screenX, screenY);
     }
+    ctx.stroke();
   }
-  ctx.stroke();
 
   ctx.shadowBlur = 0;
   animTime += 0.02;
