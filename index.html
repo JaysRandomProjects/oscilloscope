@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>Virtual Oscilloscope</title>
+<title>Virtual Vector Oscilloscope & Audio Synthesizer</title>
 
 <style>
 :root{
@@ -489,15 +489,44 @@ footer{
         <div class="field">
           <div class="field-row"><span>Waveform Type</span></div>
           <select id="waveformType">
-            <option value="sine">Sine</option>
-            <option value="square">Square</option>
-            <option value="triangle">Triangle</option>
-            <option value="sawtooth">Sawtooth</option>
+            <option value="sine">Sine Wave</option>
+            <option value="square">Square Wave</option>
+            <option value="triangle">Triangle Wave</option>
+            <option value="sawtooth">Sawtooth Wave</option>
+            <option value="pulse">Pulse Train</option>
           </select>
         </div>
       </div>
 
       <div class="section" id="sec-shape">
+        <div class="field">
+          <div class="field-row"><span>Lissajous & Presets</span></div>
+          <select id="presetType">
+            <option value="custom">-- Geometry Presets --</option>
+            <optgroup label="Lissajous Patterns (X:Y Phase)">
+              <option value="straight_line">Straight Line (1:1, 0°)</option>
+              <option value="perfect_circle">Perfect Circle (1:1, 90°)</option>
+              <option value="ellipse">Ellipse (1:1, 45°)</option>
+              <option value="figure_eight">Figure Eight (2:1)</option>
+              <option value="three_loop">Three-Loop Clover (3:1)</option>
+              <option value="four_loop">Four-Loop Crown (4:1)</option>
+              <option value="complex_lattice">Complex Lattice (5:7)</option>
+              <option value="bowtie">Lissajous Bowtie (3:2)</option>
+            </optgroup>
+            <optgroup label="Component Testing (Octopus Tracker)">
+              <option value="diode">Diode / Transistor Junction (Right Angle)</option>
+              <option value="open_circuit">Open Circuit (Horizontal Line)</option>
+              <option value="short_circuit">Short Circuit (Vertical Line)</option>
+              <option value="resistor">Resistor (Slanted Line)</option>
+              <option value="reactive_cap">Capacitor / Inductor (Reactive Loop)</option>
+            </optgroup>
+            <optgroup label="Vector Art & Synth Visuals">
+              <option value="mushroom">Oscilloscope Mushroom</option>
+              <option value="wireframe_cube">Wireframe Cuboid</option>
+            </optgroup>
+          </select>
+        </div>
+
         <div class="field">
           <div class="field-row"><span>Shape Model</span></div>
           <select id="shapeType">
@@ -695,6 +724,7 @@ const defaults = {
   mode: 'shape',
   waveformType: 'sine',
   shapeType: 'circle',
+  presetType: 'custom',
   is3D: false,
   audioDimension: '1d',
   posX: 0,
@@ -847,6 +877,57 @@ const ShapeFns = {
   }
 };
 
+/* LISSAJOUS & PRESET GENERATORS */
+const PresetFns = {
+  straight_line: t => { const a = Math.sin(t * 2 * Math.PI); return { x: a, y: a }; },
+  perfect_circle: t => ({ x: Math.cos(t * 2 * Math.PI), y: Math.sin(t * 2 * Math.PI) }),
+  ellipse: t => { const a = t * 2 * Math.PI; return { x: Math.sin(a), y: Math.sin(a + Math.PI / 4) }; },
+  figure_eight: t => { const a = t * 2 * Math.PI; return { x: Math.sin(a), y: Math.sin(2 * a) }; },
+  three_loop: t => { const a = t * 2 * Math.PI; return { x: Math.sin(a), y: Math.sin(3 * a) }; },
+  four_loop: t => { const a = t * 2 * Math.PI; return { x: Math.sin(a), y: Math.sin(4 * a) }; },
+  complex_lattice: t => { const a = t * 2 * Math.PI; return { x: Math.sin(5 * a), y: Math.sin(7 * a + Math.PI / 4) }; },
+  bowtie: t => { const a = t * 2 * Math.PI; return { x: Math.sin(2 * a), y: Math.sin(3 * a) }; },
+  
+  // Component Testing Profiles
+  diode: t => {
+    const a = Math.sin(t * 2 * Math.PI);
+    return { x: Math.max(0, a), y: Math.min(0, a) };
+  },
+  open_circuit: t => { const a = (t - 0.5) * 2; return { x: a, y: 0 }; },
+  short_circuit: t => { const a = (t - 0.5) * 2; return { x: 0, y: a }; },
+  resistor: t => { const a = (t - 0.5) * 2; return { x: a, y: a * 0.75 }; },
+  reactive_cap: t => { const a = t * 2 * Math.PI; return { x: 0.8 * Math.cos(a), y: 0.5 * Math.sin(a) }; },
+
+  // Vector Art Visuals
+  mushroom: t => {
+    const a = t * 2 * Math.PI;
+    if (t < 0.6) {
+      const capA = (t / 0.6) * Math.PI;
+      return { x: Math.cos(capA) * 0.9, y: Math.sin(capA) * 0.6 + 0.1 };
+    } else {
+      const stemT = (t - 0.6) / 0.4;
+      const x = (stemT < 0.5) ? -0.25 : 0.25;
+      const y = (stemT < 0.5) ? (0.1 - stemT * 1.2) : (-0.5 + (stemT - 0.5) * 1.2);
+      return { x, y };
+    }
+  },
+  wireframe_cube: t => {
+    const path = [
+      [-0.5,-0.5,-0.5],[0.5,-0.5,-0.5],[0.5,0.5,-0.5],[-0.5,0.5,-0.5],[-0.5,-0.5,-0.5],
+      [-0.5,-0.5,0.5],[0.5,-0.5,0.5],[0.5,0.5,0.5],[-0.5,0.5,0.5],[-0.5,-0.5,0.5],
+      [-0.5,0.5,0.5],[-0.5,0.5,-0.5],[0.5,0.5,-0.5],[0.5,0.5,0.5],[0.5,-0.5,0.5],[0.5,-0.5,-0.5]
+    ];
+    const n = path.length - 1;
+    const p = ((t * n) % n + n) % n;
+    const idx = Math.floor(p);
+    const frac = p - idx;
+    const a = path[idx];
+    const b = path[idx + 1];
+    const pt = [a[0] + (b[0]-a[0])*frac, a[1] + (b[1]-a[1])*frac, a[2] + (b[2]-a[2])*frac];
+    return project3D(pt, 25 + animTime * 15, 35 + animTime * 20, 0);
+  }
+};
+
 /* CONTINUOUS 1-LINE 3D VECTOR PIPELINE */
 function buildExtrudedSingleLine(shapeKey){
   const vertMap = { square: 4, triangle: 3, pentagon: 5, hexagon: 6, octagon: 8, star: 10, star8: 16 };
@@ -981,10 +1062,16 @@ function samplePointAt(t){
     else if(state.waveformType === 'square') y = Math.sin(angle) >= 0 ? 1 : -1;
     else if(state.waveformType === 'triangle') y = Math.asin(Math.sin(angle)) * (2 / Math.PI);
     else if(state.waveformType === 'sawtooth') y = (angle % (2 * Math.PI)) / Math.PI - 1;
+    else if(state.waveformType === 'pulse') y = (angle % (2 * Math.PI)) < (Math.PI * 0.4) ? 1 : -1;
     return { x: x, y: y * state.amplitude };
   } else {
     let rawX = 0, rawY = 0;
-    if(state.is3D){
+    
+    if(state.presetType !== 'custom' && PresetFns[state.presetType]){
+      const p = PresetFns[state.presetType](t);
+      rawX = p.x;
+      rawY = p.y;
+    } else if(state.is3D){
       const path = get3DSingleLinePath(state.shapeType);
       const n = path.length - 1;
       const p = ((t * n) % n + n) % n;
@@ -1156,7 +1243,8 @@ function updateReadouts(){
   if(state.mode === 'waveform'){
     el('readoutSrc').innerHTML = `SRC: <b>${state.waveformType.toUpperCase()}</b>`;
   } else if(state.mode === 'shape'){
-    el('readoutSrc').innerHTML = `SRC: <b>${state.shapeType.toUpperCase()} · ${state.is3D ? '3D (1-LINE)' : '2D (1-LINE)'}</b>`;
+    const name = state.presetType !== 'custom' ? state.presetType : state.shapeType;
+    el('readoutSrc').innerHTML = `SRC: <b>${name.toUpperCase()} · ${state.is3D ? '3D' : '2D'}</b>`;
   } else {
     el('readoutSrc').innerHTML = `SRC: <b>AUDIO FILE (${state.audioDimension.toUpperCase()})</b>`;
   }
@@ -1201,6 +1289,13 @@ el('waveformType').addEventListener('change', e => {
 
 el('shapeType').addEventListener('change', e => {
   state.shapeType = e.target.value;
+  state.presetType = 'custom';
+  el('presetType').value = 'custom';
+  updateReadouts();
+});
+
+el('presetType').addEventListener('change', e => {
+  state.presetType = e.target.value;
   updateReadouts();
 });
 
