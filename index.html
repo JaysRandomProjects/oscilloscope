@@ -622,7 +622,7 @@ footer{
 </div>
 <audio id="audioPlayer" preload="metadata" style="display:none"></audio>
 <script>
-(function(){
+document.addEventListener('DOMContentLoaded', function() {
 "use strict";
 
 // Defaults and state
@@ -773,7 +773,7 @@ function updateReadouts(){
   applyVisibility();
 }
 // Slider for zoom
-el('zoom').addEventListener('input', updateReadouts);
+el('zoom').addEventListener('input', ()=>{updateReadouts();});
 // File handling
 const fileDrop=el('fileDrop');
 const audioFileInput=el('audioFile');
@@ -792,208 +792,6 @@ async function decodeAudioFile(file){
     alert('Could not decode this audio file.');
   }
 }
-el('audioFile').addEventListener('change', async e=>{
-  const file=e.target.files&&e.target.files[0];
-  if(!file)return;
-  const url=URL.createObjectURL(file);
-  audioEl.src=url;
-  audioEl.load();
-  fileDrop.textContent='♪ '+file.name;
-  fileDrop.classList.add('has-file');
-  await decodeAudioFile(file);
-  el('audioDimensionField').classList.remove('hidden');
-  state.audioDimension='1d';
-  audioDimButtons.forEach(btn=>{
-    btn.classList.toggle('active',btn.dataset.audiodim==='1d');
-  });
-  updateReadouts();
-});
-// Playback controls
-el('btnPlay').addEventListener('click', async ()=>{
-  if(!audioEl.src){
-    fileDrop.textContent='Choose a file first…';
-    return;
-  }
-  ensureAudioGraph();
-  if(audioCtx.state==='suspended'){await audioCtx.resume();}
-  audioEl.play();
-});
-el('btnPause').addEventListener('click', ()=>{audioEl.pause();});
-el('btnStop').addEventListener('click', ()=>{audioEl.pause();audioEl.currentTime=0;});
-// Seek bar
-const seekInput=el('seek');
-let userSeeking=false;
-seekInput.addEventListener('mousedown', ()=>{userSeeking=true;});
-seekInput.addEventListener('touchstart', ()=>{userSeeking=true;},{passive:true});
-seekInput.addEventListener('change', ()=>{
-  if(audioEl.duration){
-    audioEl.currentTime= (seekInput.value/100)*audioEl.duration;
-  }
-  userSeeking=false;
-});
-audioEl.addEventListener('timeupdate', ()=>{
-  if(userSeeking)return;
-  const dur=audioEl.duration||0;
-  const pct=dur>0?(audioEl.currentTime/dur)*100:0;
-  seekInput.value=pct;
-  document.getElementById('v-seek').textContent=fmtTime(audioEl.currentTime)+' / '+fmtTime(dur);
-});
-audioEl.addEventListener('loadedmetadata', ()=>{
-  document.getElementById('v-seek').textContent=fmtTime(0)+' / '+fmtTime(audioEl.duration);
-});
-function fmtTime(sec){ if(!isFinite(sec)||sec<0)sec=0; const m=Math.floor(sec/60); const s=Math.floor(sec%60); return m+':'+(s<10?'0':'')+s; }
-// Shape audio generator
-let shapeAudioSource=null;
-let shapeAudioGain=null;
-function stopShapeAudio(){
-  if(shapeAudioSource){try{shapeAudioSource.stop();}catch(e){}try{shapeAudioSource.disconnect();}catch(e){}shapeAudioSource=null;}
-  if(shapeAudioGain){try{shapeAudioGain.disconnect();}catch(e){}shapeAudioGain=null;}
-}
-async function playShapeAudio(){
-  if(!audioCtx){audioCtx=new (window.AudioContext||window.webkitAudioContext)();}
-  if(audioCtx.state==='suspended'){await audioCtx.resume();}
-  stopShapeAudio();
-  const sampleRate=audioCtx.sampleRate;
-  const duration=1;
-  const totalSamples=Math.floor(sampleRate*duration);
-  const buffer=audioCtx.createBuffer(2,totalSamples,sampleRate);
-  const left=buffer.getChannelData(0);
-  const right=buffer.getChannelData(1);
-  const fn=ShapeFns[state.shapeType];
-  const frequency=Math.max(0.1, state.frequency);
-  const phase=state.phase*Math.PI/180;
-  const amp=Math.min(1,Math.max(0.05, state.amplitude));
-  const rot=state.rotation*Math.PI/180;
-  const cosR=Math.cos(rot);
-  const sinR=Math.sin(rot);
-  for(let i=0;i<totalSamples;i++){
-    const time=i/sampleRate;
-    const t=((time*frequency*Math.max(0.05,state.speed)+phase/(2*Math.PI))%1);
-    const p=fn(t);
-    const xr=p.x*cosR - p.y*sinR;
-    const yr=p.x*sinR + p.y*cosR;
-    left[i]=Math.max(-1,Math.min(1,xr*state.scale*amp*0.85));
-    right[i]=Math.max(-1,Math.min(1,yr*state.scale*amp*0.85));
-  }
-  shapeAudioSource=audioCtx.createBufferSource();
-  shapeAudioSource.buffer=buffer;
-  shapeAudioSource.loop=true;
-  shapeAudioGain=audioCtx.createGain();
-  shapeAudioGain.gain.value= Math.min(1, state.volume/100)*0.65;
-  shapeAudioSource.connect(shapeAudioGain);
-  shapeAudioGain.connect(audioCtx.destination);
-  shapeAudioSource.start();
-}
-el('btnShapeAudio').addEventListener('click', playShapeAudio);
-el('btnShapeStop').addEventListener('click', stopShapeAudio);
-el('volume').addEventListener('input', ()=>{
-  if(shapeAudioGain){shapeAudioGain.gain.value= Math.min(1, state.volume/100)*0.65;}
-});
-// Reset to defaults
-el('btnReset').addEventListener('click', ()=>{
-  Object.assign(state, defaults);
-  document.querySelectorAll('#waveformType,#shapeType').forEach(elm=>{elm.value=defaults[elm.id];});
-  ['posX','posY','scale','rotation','rotX','rotY','rotZ','frequency','amplitude','phase','speed','zoom','persistence','brightness','volume'].forEach(k=>{
-    const elm=document.getElementById(k);
-    if(elm){elm.value=defaults[k];elm.dispatchEvent(new Event('input'));}
-  });
-  modeTabs.forEach(t=>{t.classList.toggle('active',t.dataset.mode===defaults.mode);});
-  dimToggles.forEach(b=>{b.classList.toggle('active',b.dataset.dim==='3d');});
-  audioDimButtons.forEach(b=>{b.classList.toggle('active',b.dataset.audiodim===defaults.audioDimension);});
-  audioEl.pause();audioEl.currentTime=0;stopShapeAudio();decodedAudio=null;
-  document.getElementById('fileDrop').textContent='Click to choose an audio file…';
-  document.getElementById('fileDrop').classList.remove('has-file');
-  document.getElementById('audioDimensionField').classList.add('hidden');
-  applyVisibility();
-  updateReadouts();
-});
-// Visibility controls
-function applyVisibility(){
-  const m=state.mode;
-  document.querySelector('#sec-waveform').classList.toggle('hidden',m!=='waveform');
-  document.querySelector('#sec-shape').classList.toggle('hidden',m!=='shape');
-  document.querySelector('#sec-audio').classList.toggle('hidden',m!=='audio');
-  document.querySelector('#sec-transform').classList.toggle('hidden',m!=='shape');
-  document.querySelector('#sec-signal').classList.toggle('hidden',m==='audio');
-  document.querySelector('#field-rotation2d').classList.toggle('hidden',!(m==='shape'&&!state.is3D));
-  document.querySelector('#field-rotX').classList.toggle('hidden',!(m==='shape'&&state.is3D));
-  document.querySelector('#field-rotY').classList.toggle('hidden',!(m==='shape'&&state.is3D));
-  document.querySelector('#field-rotZ').classList.toggle('hidden',!(m==='shape'&&state.is3D));
-  document.querySelector('#audioDimensionField').classList.toggle('hidden',m!=='audio');
-  if(m==='shape'){
-    chanLabel.textContent=state.is3D?'CH1: X   CH2: Y (3D VECTOR)':'CH1: X   CH2: Y (XY MODE)';
-  }else if(m==='audio' && state.audioDimension==='2d'){
-    chanLabel.textContent='CH1: LEFT/X   CH2: RIGHT/Y (XY MODE)';
-  }else{
-    chanLabel.textContent='CH1: Y   CH2: TIME';
-  }
-}
-// Initial update
-updateReadouts();
-applyVisibility();
-
-// Drawing and rendering functions
-const Wave={
-  sine:a=>Math.sin(a),
-  square:a=>{const s=Math.sin(a);return s===0?0:(s>0?1:-1);},
-  triangle:a=> (2/Math.PI)*Math.asin(Math.sin(a)),
-  sawtooth:a=>{const t=a/(2*Math.PI);return 2*(t-Math.floor(.5+t));}
-};
-const Shape={square:[[-1,-1],[1,-1],[1,1],[-1,1]],triangle:regularPolygon(3),pentagon:regularPolygon(5),star:(()=>{const v=[];const pts=5;for(let i=0;i<pts*2;i++){const r=i%2===0?1:1/( (1+Math.sqrt(5))/2 * (1+Math.sqrt(5))/2 ));const ang=-Math.PI/2+i*Math.PI/pts;v.push([r*Math.cos(ang),r*Math.sin(ang)]);}return v;})()};
-const ShapeFns={
-  circle:t=>{const a=t*2*Math.PI;return{x:Math.cos(a), y:Math.sin(a)}},
-  square:t=>pointOnPolygon(t,Shape.square),
-  triangle:t=>pointOnPolygon(t,Shape.triangle),
-  pentagon:t=>pointOnPolygon(t,Shape.pentagon),
-  star:t=>pointOnPolygon(t,Shape.star),
-  heart:t=>{
-    const a=t*2*Math.PI;
-    const x=16*Math.pow(Math.sin(a),3);
-    const y=13*Math.cos(a)-5*Math.cos(2*a)-2*Math.cos(3*a)-Math.cos(4*a);
-    const scale=16;
-    const yOffset=-2.53837;
-    return {x:x/scale, y:(y-yOffset)/scale};
-  }
-};
-function pointOnPolygon(t,verts){const n=verts.length; const p=t*n; let seg=Math.floor(p)%n; if(seg<0)seg+=n; const f=p-Math.floor(p);const a=verts[seg];const b=verts[(seg+1)%n];return{x:a[0]+(b[0]-a[0])*f, y:a[1]+(b[1]-a[1])*f};}
-function regularPolygon(n){const v=[];for(let i=0;i<n;i++){const ang=-Math.PI/2+i*2*Math.PI/n;v.push([Math.cos(ang),Math.sin(ang)]);}return v;}
-const PHI=(1+Math.sqrt(5))/2;
-const STAR_INNER_RATIO=1/(PHI*PHI);
-const ShapeSamples={circle:160,heart:160,square:80,triangle:60,pentagon:100,star:160};
-const Shape3DCache={};
-function buildExtrudedShape(shapeKey){const n=shapeKey==='square'?4:shapeKey==='triangle'?3:shapeKey==='pentagon'?5:shapeKey==='star'?10:48;const depth=shapeKey==='square'?1:.42;const front=[];const back=[];const fn=ShapeFns[shapeKey];for(let i=0;i<n;i++){const t=i/n;const p=fn(t);front.push([p.x,p.y,depth]); back.push([p.x,p.y,-depth]);}const strokes=[];strokes.push(front.concat([front[0]])); strokes.push(back.concat([back[0]]));const strutStep=n>12?Math.max(1,Math.floor(n/10)):1;for(let i=0;i<n;i+=strutStep){strokes.push([front[i],back[i]]);}return strokes;}
-function buildSphere(){const strokes=[];const lat=5;const lon=8;const segs=32;for(let i=1;i<lat;i++){const phi=-Math.PI/2+i*(Math.PI/lat);const ring=[];for(let j=0;j<=segs;j++){const th=j*2*Math.PI/segs;ring.push([Math.cos(phi)*Math.cos(th),Math.sin(phi),Math.cos(phi)*Math.sin(th)]);}strokes.push(ring);}for(let j=0;j<lon;j++){const th=j*2*Math.PI/lon;const merid=[];for(let i=0;i<=segs;i++){const phi=-Math.PI/2+i*(Math.PI/segs);merid.push([Math.cos(phi)*Math.cos(th),Math.sin(phi),Math.cos(phi)*Math.sin(th)]);}strokes.push(merid);}return strokes;}
-function get3DGeometry(shapeKey){if(Shape3DCache[shapeKey])return Shape3DCache[shapeKey];const g=shapeKey==='circle'?buildSphere():buildExtrudedShape(shapeKey);Shape3DCache[shapeKey]=g;return g;}
-// Audio engine
-const audioEl=document.getElementById('audioPlayer');
-let audioCtx=null;
-let analyser=null;
-let sourceNode=null;
-let audioReady=false;
-let audioDataArray=null;
-let decodedAudio=null;
-let userSeeking=false;
-let shapeAudioSource=null;
-let shapeAudioGain=null;
-function ensureAudioGraph(){
-  if(audioReady)return;
-  if(!audioCtx){audioCtx=new (window.AudioContext||window.webkitAudioContext)();}
-  sourceNode=audioCtx.createMediaElementSource(audioEl);
-  analyser=audioCtx.createAnalyser();
-  analyser.fftSize=2048;
-  analyser.smoothingTimeConstant=0.08;
-  sourceNode.connect(analyser);
-  analyser.connect(audioCtx.destination);
-  audioDataArray=new Uint8Array(analyser.fftSize);
-  audioReady=true;
-}
-async function decodeAudioFile(file){
-  if(!audioCtx){audioCtx=new (window.AudioContext||window.webkitAudioContext)();}
-  const buffer=await file.arrayBuffer();
-  try{decodedAudio=await audioCtx.decodeAudioData(buffer);}catch(err){console.error(err);decodedAudio=null;alert('Could not decode this audio file.');}
-}
-function fmtTime(sec){if(!isFinite(sec)||sec<0)sec=0;const m=Math.floor(sec/60);const s=Math.floor(sec%60);return m+':'+(s<10?'0':'')+s;}
-el('fileDrop').addEventListener('click', ()=>{el('audioFile').click();});
 el('audioFile').addEventListener('change', async e=>{
   const file=e.target.files&&e.target.files[0];
   if(!file)return;
@@ -1034,7 +832,7 @@ audioEl.addEventListener('timeupdate', ()=>{
 audioEl.addEventListener('loadedmetadata', ()=>{
   document.getElementById('v-seek').textContent=fmtTime(0)+' / '+fmtTime(audioEl.duration);
 });
-// Shape audio
+// Shape audio controls
 function stopShapeAudio(){
   if(shapeAudioSource){try{shapeAudioSource.stop();}catch(e){}try{shapeAudioSource.disconnect();}catch(e){}shapeAudioSource=null;}
   if(shapeAudioGain){try{shapeAudioGain.disconnect();}catch(e){}shapeAudioGain=null;}
@@ -1044,8 +842,7 @@ async function playShapeAudio(){
   if(audioCtx.state==='suspended'){await audioCtx.resume();}
   stopShapeAudio();
   const sampleRate=audioCtx.sampleRate;
-  const duration=1;
-  const totalSamples=Math.floor(sampleRate*duration);
+  const totalSamples=Math.floor(sampleRate);
   const buffer=audioCtx.createBuffer(2,totalSamples,sampleRate);
   const left=buffer.getChannelData(0);
   const right=buffer.getChannelData(1);
@@ -1057,9 +854,8 @@ async function playShapeAudio(){
   const cosR=Math.cos(rot);
   const sinR=Math.sin(rot);
   for(let i=0;i<totalSamples;i++){
-    const time=i/sampleRate;
-    const t=((time*frequency*Math.max(0.05,state.speed)+phase/(2*Math.PI))%1);
-    const p=fn(t);
+    const t=i/sampleRate;
+    const p=fn((t*frequency*state.speed+phase/(2*Math.PI))%1);
     const xr=p.x*cosR - p.y*sinR;
     const yr=p.x*sinR + p.y*cosR;
     left[i]=Math.max(-1,Math.min(1,xr*state.scale*amp*0.85));
@@ -1079,7 +875,7 @@ el('btnShapeStop').addEventListener('click', stopShapeAudio);
 el('volume').addEventListener('input', ()=>{
   if(shapeAudioGain){shapeAudioGain.gain.value= Math.min(1, state.volume/100)*0.65;}
 });
-// Reset button
+// Reset to defaults
 el('btnReset').addEventListener('click', ()=>{
   Object.assign(state, defaults);
   document.querySelectorAll('#waveformType,#shapeType').forEach(elm=>{elm.value=defaults[elm.id];});
@@ -1121,14 +917,19 @@ function applyVisibility(){
 updateReadouts();
 applyVisibility();
 
-// Rendering
+// Drawing functions
 const Wave={
   sine:a=>Math.sin(a),
   square:a=>{const s=Math.sin(a);return s===0?0:(s>0?1:-1);},
   triangle:a=> (2/Math.PI)*Math.asin(Math.sin(a)),
   sawtooth:a=>{const t=a/(2*Math.PI);return 2*(t-Math.floor(.5+t));}
 };
-const Shape={square:[[-1,-1],[1,-1],[1,1],[-1,1]],triangle:regularPolygon(3),pentagon:regularPolygon(5),star:(()=>{const v=[];const pts=5;for(let i=0;i<pts*2;i++){const r=i%2===0?1:1/( (1+Math.sqrt(5))/2 * (1+Math.sqrt(5))/2 ));const ang=-Math.PI/2+i*Math.PI/pts;v.push([r*Math.cos(ang),r*Math.sin(ang)]);}return v;})()};
+const Shape={
+  square:[[-1,-1],[1,-1],[1,1],[-1,1]],
+  triangle:regularPolygon(3),
+  pentagon:regularPolygon(5),
+  star:(()=>{const v=[];const pts=5; for(let i=0;i<pts*2;i++){const r=i%2===0?1:1/( (1+Math.sqrt(5))/2 * (1+Math.sqrt(5))/2 )); const ang=-Math.PI/2+i*Math.PI/pts; v.push([r*Math.cos(ang),r*Math.sin(ang)]);}return v;})()
+};
 const ShapeFns={
   circle:t=>{const a=t*2*Math.PI;return{x:Math.cos(a), y:Math.sin(a)}},
   square:t=>pointOnPolygon(t,Shape.square),
@@ -1221,30 +1022,43 @@ async function playShapeAudio(){
   shapeAudioGain.connect(audioCtx.destination);
   shapeAudioSource.start();
 }
-el('btnShapeAudio').addEventListener('click', playShapeAudio);
-el('btnShapeStop').addEventListener('click', stopShapeAudio);
-el('volume').addEventListener('input', ()=>{
+document.getElementById('btnShapeAudio').addEventListener('click', playShapeAudio);
+document.getElementById('btnShapeStop').addEventListener('click', stopShapeAudio);
+document.getElementById('volume').addEventListener('input', ()=>{
   if(shapeAudioGain){shapeAudioGain.gain.value= Math.min(1, state.volume/100)*0.65;}
 });
 // Reset button
-el('btnReset').addEventListener('click', ()=>{
+document.getElementById('btnReset').addEventListener('click', ()=>{
   Object.assign(state, defaults);
   document.querySelectorAll('#waveformType,#shapeType').forEach(elm=>{elm.value=defaults[elm.id];});
   ['posX','posY','scale','rotation','rotX','rotY','rotZ','frequency','amplitude','phase','speed','zoom','persistence','brightness','volume'].forEach(k=>{
     const elm=document.getElementById(k);
     if(elm){elm.value=defaults[k];elm.dispatchEvent(new Event('input'));}
   });
-  modeTabs.forEach(t=>{t.classList.toggle('active',t.dataset.mode===defaults.mode);});
-  dimToggles.forEach(b=>{b.classList.toggle('active',b.dataset.dim==='3d');});
-  audioDimButtons.forEach(b=>{b.classList.toggle('active',b.dataset.audiodim===defaults.audioDimension);});
-  audioEl.pause();audioEl.currentTime=0;stopShapeAudio();decodedAudio=null;
+  // toggle active classes for mode tabs
+  document.querySelectorAll('.mode-tab').forEach(t=>{
+    t.classList.toggle('active',t.dataset.mode===defaults.mode);
+  });
+  // toggle active for dim toggles
+  document.querySelectorAll('.toggle-btn[data-dim]').forEach(b=>{
+    b.classList.toggle('active',b.dataset.dim==='3d');
+  });
+  // toggle active for audio dims
+  document.querySelectorAll('[data-audiodim]').forEach(b=>{
+    b.classList.toggle('active',b.dataset.audiodim===defaults.audioDimension);
+  });
+  // stop audio
+  audioEl.pause();
+  audioEl.currentTime=0;
+  stopShapeAudio();
+  decodedAudio=null;
   document.getElementById('fileDrop').textContent='Click to choose an audio file…';
   document.getElementById('fileDrop').classList.remove('has-file');
   document.getElementById('audioDimensionField').classList.add('hidden');
   applyVisibility();
   updateReadouts();
 });
-// Visibility controls
+// Visibility toggle
 function applyVisibility(){
   const m=state.mode;
   document.querySelector('#sec-waveform').classList.toggle('hidden',m!=='waveform');
@@ -1258,19 +1072,566 @@ function applyVisibility(){
   document.querySelector('#field-rotZ').classList.toggle('hidden',!(m==='shape'&&state.is3D));
   document.querySelector('#audioDimensionField').classList.toggle('hidden',m!=='audio');
   if(m==='shape'){
-    chanLabel.textContent=state.is3D?'CH1: X   CH2: Y (3D VECTOR)':'CH1: X   CH2: Y (XY MODE)';
+    document.querySelector('#chanLabel').textContent=state.is3D?'CH1: X   CH2: Y (3D VECTOR)':'CH1: X   CH2: Y (XY MODE)';
   }else if(m==='audio' && state.audioDimension==='2d'){
-    chanLabel.textContent='CH1: LEFT/X   CH2: RIGHT/Y (XY MODE)';
+    document.querySelector('#chanLabel').textContent='CH1: LEFT/X   CH2: RIGHT/Y (XY MODE)';
   }else{
-    chanLabel.textContent='CH1: Y   CH2: TIME';
+    document.querySelector('#chanLabel').textContent='CH1: Y   CH2: TIME';
   }
 }
 updateReadouts();
 applyVisibility();
 
-// Main rendering loop
-const fpsData={lastTime:performance.now(),count:0,fps:0};
-let lastT=performance.now();
+// Drawing functions
+const Wave={
+  sine:a=>Math.sin(a),
+  square:a=>{const s=Math.sin(a);return s===0?0:(s>0?1:-1);},
+  triangle:a=> (2/Math.PI)*Math.asin(Math.sin(a)),
+  sawtooth:a=>{const t=a/(2*Math.PI);return 2*(t-Math.floor(.5+t));}
+};
+const Shape={
+  square:[[-1,-1],[1,-1],[1,1],[-1,1]],
+  triangle:regularPolygon(3),
+  pentagon:regularPolygon(5),
+  star:(()=>{const v=[];const pts=5; for(let i=0;i<pts*2;i++){const r=i%2===0?1:1/( (1+Math.sqrt(5))/2 * (1+Math.sqrt(5))/2 )); const ang=-Math.PI/2+i*Math.PI/pts; v.push([r*Math.cos(ang),r*Math.sin(ang)]);}return v;})()
+};
+const ShapeFns={
+  circle:t=>{const a=t*2*Math.PI;return{x:Math.cos(a), y:Math.sin(a)}},
+  square:t=>pointOnPolygon(t,Shape.square),
+  triangle:t=>pointOnPolygon(t,Shape.triangle),
+  pentagon:t=>pointOnPolygon(t,Shape.pentagon),
+  star:t=>pointOnPolygon(t,Shape.star),
+  heart:t=>{
+    const a=t*2*Math.PI;
+    const x=16*Math.pow(Math.sin(a),3);
+    const y=13*Math.cos(a)-5*Math.cos(2*a)-2*Math.cos(3*a)-Math.cos(4*a);
+    const scale=16;
+    const yOffset=-2.53837;
+    return {x:x/scale, y:(y-yOffset)/scale};
+  }
+};
+function pointOnPolygon(t,verts){const n=verts.length; const p=t*n; let seg=Math.floor(p)%n; if(seg<0)seg+=n; const f=p-Math.floor(p);const a=verts[seg];const b=verts[(seg+1)%n];return{x:a[0]+(b[0]-a[0])*f, y:a[1]+(b[1]-a[1])*f};}
+function regularPolygon(n){const v=[];for(let i=0;i<n;i++){const ang=-Math.PI/2+i*2*Math.PI/n;v.push([Math.cos(ang),Math.sin(ang)]);}return v;}
+const PHI=(1+Math.sqrt(5))/2;
+const STAR_INNER_RATIO=1/(PHI*PHI);
+const ShapeSamples={circle:160,heart:160,square:80,triangle:60,pentagon:100,star:160};
+const Shape3DCache={};
+function buildExtrudedShape(shapeKey){const n=shapeKey==='square'?4:shapeKey==='triangle'?3:shapeKey==='pentagon'?5:shapeKey==='star'?10:48;const depth=shapeKey==='square'?1:.42;const front=[];const back=[];const fn=ShapeFns[shapeKey];for(let i=0;i<n;i++){const t=i/n;const p=fn(t);front.push([p.x,p.y,depth]); back.push([p.x,p.y,-depth]);}const strokes=[];strokes.push(front.concat([front[0]])); strokes.push(back.concat([back[0]]));const strutStep=n>12?Math.max(1,Math.floor(n/10)):1;for(let i=0;i<n;i+=strutStep){strokes.push([front[i],back[i]]);}return strokes;}
+function buildSphere(){const strokes=[];const lat=5;const lon=8;const segs=32;for(let i=1;i<lat;i++){const phi=-Math.PI/2+i*(Math.PI/lat);const ring=[];for(let j=0;j<=segs;j++){const th=j*2*Math.PI/segs;ring.push([Math.cos(phi)*Math.cos(th),Math.sin(phi),Math.cos(phi)*Math.sin(th)]);}strokes.push(ring);}for(let j=0;j<lon;j++){const th=j*2*Math.PI/lon;const merid=[];for(let i=0;i<=segs;i++){const phi=-Math.PI/2+i*(Math.PI/segs);merid.push([Math.cos(phi)*Math.cos(th),Math.sin(phi),Math.cos(phi)*Math.sin(th)]);}strokes.push(merid);}return strokes;}
+function get3DGeometry(shapeKey){if(Shape3DCache[shapeKey])return Shape3DCache[shapeKey];const g=shapeKey==='circle'?buildSphere():buildExtrudedShape(shapeKey);Shape3DCache[shapeKey]=g;return g;}
+
+// Audio engine
+let audioCtx=null;
+let analyser=null;
+let sourceNode=null;
+let audioReady=false;
+let audioDataArray=null;
+let decodedAudio=null;
+let userSeeking=false;
+const audioEl=document.getElementById('audioPlayer');
+let shapeAudioSource=null;
+let shapeAudioGain=null;
+function ensureAudioGraph(){
+  if(audioReady)return;
+  if(!audioCtx){audioCtx=new (window.AudioContext||window.webkitAudioContext)();}
+  sourceNode=audioCtx.createMediaElementSource(audioEl);
+  analyser=audioCtx.createAnalyser();
+  analyser.fftSize=2048;
+  analyser.smoothingTimeConstant=0.08;
+  sourceNode.connect(analyser);
+  analyser.connect(audioCtx.destination);
+  audioDataArray=new Uint8Array(analyser.fftSize);
+  audioReady=true;
+}
+async function decodeAudioFile(file){
+  if(!audioCtx){audioCtx=new (window.AudioContext||window.webkitAudioContext)();}
+  const buffer=await file.arrayBuffer();
+  try{decodedAudio=await audioCtx.decodeAudioData(buffer);}catch(err){console.error(err);decodedAudio=null;alert('Could not decode this audio file.');}
+}
+function fmtTime(sec){if(!isFinite(sec)||sec<0)sec=0;const m=Math.floor(sec/60);const s=Math.floor(sec%60);return m+':'+(s<10?'0':'')+s;}
+// Shape audio controls
+function stopShapeAudio(){
+  if(shapeAudioSource){try{shapeAudioSource.stop();}catch(e){}try{shapeAudioSource.disconnect();}catch(e){}shapeAudioSource=null;}
+  if(shapeAudioGain){try{shapeAudioGain.disconnect();}catch(e){}shapeAudioGain=null;}
+}
+async function playShapeAudio(){
+  if(!audioCtx){audioCtx=new (window.AudioContext||window.webkitAudioContext)();}
+  if(audioCtx.state==='suspended'){await audioCtx.resume();}
+  stopShapeAudio();
+  const sampleRate=audioCtx.sampleRate;
+  const totalSamples=Math.floor(sampleRate);
+  const buffer=audioCtx.createBuffer(2,totalSamples,sampleRate);
+  const left=buffer.getChannelData(0);
+  const right=buffer.getChannelData(1);
+  const fn=ShapeFns[state.shapeType];
+  const frequency=Math.max(0.1, state.frequency);
+  const phase=state.phase*Math.PI/180;
+  const amp=Math.min(1,Math.max(0.05, state.amplitude));
+  const rot=state.rotation*Math.PI/180;
+  const cosR=Math.cos(rot);
+  const sinR=Math.sin(rot);
+  for(let i=0;i<totalSamples;i++){
+    const t=i/sampleRate;
+    const p=fn((t*frequency*state.speed+phase/(2*Math.PI))%1);
+    const xr=p.x*cosR - p.y*sinR;
+    const yr=p.x*sinR + p.y*cosR;
+    left[i]=Math.max(-1,Math.min(1,xr*state.scale*amp*0.85));
+    right[i]=Math.max(-1,Math.min(1,yr*state.scale*amp*0.85));
+  }
+  shapeAudioSource=audioCtx.createBufferSource();
+  shapeAudioSource.buffer=buffer;
+  shapeAudioSource.loop=true;
+  shapeAudioGain=audioCtx.createGain();
+  shapeAudioGain.gain.value= Math.min(1, state.volume/100)*0.65;
+  shapeAudioSource.connect(shapeAudioGain);
+  shapeAudioGain.connect(audioCtx.destination);
+  shapeAudioSource.start();
+}
+document.getElementById('btnShapeAudio').addEventListener('click', playShapeAudio);
+document.getElementById('btnShapeStop').addEventListener('click', stopShapeAudio);
+document.getElementById('volume').addEventListener('input', ()=>{
+  if(shapeAudioGain){shapeAudioGain.gain.value= Math.min(1, state.volume/100)*0.65;}
+});
+// Reset button
+document.getElementById('btnReset').addEventListener('click', ()=>{
+  Object.assign(state, defaults);
+  document.querySelectorAll('#waveformType,#shapeType').forEach(elm=>{elm.value=defaults[elm.id];});
+  ['posX','posY','scale','rotation','rotX','rotY','rotZ','frequency','amplitude','phase','speed','zoom','persistence','brightness','volume'].forEach(k=>{
+    const elm=document.getElementById(k);
+    if(elm){elm.value=defaults[k];elm.dispatchEvent(new Event('input'));}
+  });
+  // toggle active classes for mode tabs
+  document.querySelectorAll('.mode-tab').forEach(t=>{
+    t.classList.toggle('active',t.dataset.mode===defaults.mode);
+  });
+  // toggle active for dim toggles
+  document.querySelectorAll('.toggle-btn[data-dim]').forEach(b=>{
+    b.classList.toggle('active',b.dataset.dim==='3d');
+  });
+  // toggle active for audio dims
+  document.querySelectorAll('[data-audiodim]').forEach(b=>{
+    b.classList.toggle('active',b.dataset.audiodim===defaults.audioDimension);
+  });
+  // stop audio
+  audioEl.pause();
+  audioEl.currentTime=0;
+  stopShapeAudio();
+  decodedAudio=null;
+  document.getElementById('fileDrop').textContent='Click to choose an audio file…';
+  document.getElementById('fileDrop').classList.remove('has-file');
+  document.getElementById('audioDimensionField').classList.add('hidden');
+  applyVisibility();
+  updateReadouts();
+});
+// Visibility toggle
+function applyVisibility(){
+  const m=state.mode;
+  document.querySelector('#sec-waveform').classList.toggle('hidden',m!=='waveform');
+  document.querySelector('#sec-shape').classList.toggle('hidden',m!=='shape');
+  document.querySelector('#sec-audio').classList.toggle('hidden',m!=='audio');
+  document.querySelector('#sec-transform').classList.toggle('hidden',m!=='shape');
+  document.querySelector('#sec-signal').classList.toggle('hidden',m==='audio');
+  document.querySelector('#field-rotation2d').classList.toggle('hidden',!(m==='shape'&&!state.is3D));
+  document.querySelector('#field-rotX').classList.toggle('hidden',!(m==='shape'&&state.is3D));
+  document.querySelector('#field-rotY').classList.toggle('hidden',!(m==='shape'&&state.is3D));
+  document.querySelector('#field-rotZ').classList.toggle('hidden',!(m==='shape'&&state.is3D));
+  document.querySelector('#audioDimensionField').classList.toggle('hidden',m!=='audio');
+  if(m==='shape'){
+    document.querySelector('#chanLabel').textContent=state.is3D?'CH1: X   CH2: Y (3D VECTOR)':'CH1: X   CH2: Y (XY MODE)';
+  }else if(m==='audio' && state.audioDimension==='2d'){
+    document.querySelector('#chanLabel').textContent='CH1: LEFT/X   CH2: RIGHT/Y (XY MODE)';
+  }else{
+    document.querySelector('#chanLabel').textContent='CH1: Y   CH2: TIME';
+  }
+}
+updateReadouts();
+applyVisibility();
+
+// Drawing functions
+const Wave={
+  sine:a=>Math.sin(a),
+  square:a=>{const s=Math.sin(a);return s===0?0:(s>0?1:-1);},
+  triangle:a=> (2/Math.PI)*Math.asin(Math.sin(a)),
+  sawtooth:a=>{const t=a/(2*Math.PI);return 2*(t-Math.floor(.5+t));}
+};
+const Shape={
+  square:[[-1,-1],[1,-1],[1,1],[-1,1]],
+  triangle:regularPolygon(3),
+  pentagon:regularPolygon(5),
+  star:(()=>{const v=[];const pts=5; for(let i=0;i<pts*2;i++){const r=i%2===0?1:1/( (1+Math.sqrt(5))/2 * (1+Math.sqrt(5))/2 )); const ang=-Math.PI/2+i*Math.PI/pts; v.push([r*Math.cos(ang),r*Math.sin(ang)]);}return v;})()
+};
+const ShapeFns={
+  circle:t=>{const a=t*2*Math.PI;return{x:Math.cos(a), y:Math.sin(a)}},
+  square:t=>pointOnPolygon(t,Shape.square),
+  triangle:t=>pointOnPolygon(t,Shape.triangle),
+  pentagon:t=>pointOnPolygon(t,Shape.pentagon),
+  star:t=>pointOnPolygon(t,Shape.star),
+  heart:t=>{
+    const a=t*2*Math.PI;
+    const x=16*Math.pow(Math.sin(a),3);
+    const y=13*Math.cos(a)-5*Math.cos(2*a)-2*Math.cos(3*a)-Math.cos(4*a);
+    const scale=16;
+    const yOffset=-2.53837;
+    return {x:x/scale, y:(y-yOffset)/scale};
+  }
+};
+function pointOnPolygon(t,verts){const n=verts.length; const p=t*n; let seg=Math.floor(p)%n; if(seg<0)seg+=n; const f=p-Math.floor(p);const a=verts[seg];const b=verts[(seg+1)%n];return{x:a[0]+(b[0]-a[0])*f, y:a[1]+(b[1]-a[1])*f};}
+function regularPolygon(n){const v=[];for(let i=0;i<n;i++){const ang=-Math.PI/2+i*2*Math.PI/n;v.push([Math.cos(ang),Math.sin(ang)]);}return v;}
+const PHI=(1+Math.sqrt(5))/2;
+const STAR_INNER_RATIO=1/(PHI*PHI);
+const ShapeSamples={circle:160,heart:160,square:80,triangle:60,pentagon:100,star:160};
+const Shape3DCache={};
+function buildExtrudedShape(shapeKey){const n=shapeKey==='square'?4:shapeKey==='triangle'?3:shapeKey==='pentagon'?5:shapeKey==='star'?10:48;const depth=shapeKey==='square'?1:.42;const front=[];const back=[];const fn=ShapeFns[shapeKey];for(let i=0;i<n;i++){const t=i/n;const p=fn(t);front.push([p.x,p.y,depth]); back.push([p.x,p.y,-depth]);}const strokes=[];strokes.push(front.concat([front[0]])); strokes.push(back.concat([back[0]]));const strutStep=n>12?Math.max(1,Math.floor(n/10)):1;for(let i=0;i<n;i+=strutStep){strokes.push([front[i],back[i]]);}return strokes;}
+function buildSphere(){const strokes=[];const lat=5;const lon=8;const segs=32;for(let i=1;i<lat;i++){const phi=-Math.PI/2+i*(Math.PI/lat);const ring=[];for(let j=0;j<=segs;j++){const th=j*2*Math.PI/segs;ring.push([Math.cos(phi)*Math.cos(th),Math.sin(phi),Math.cos(phi)*Math.sin(th)]);}strokes.push(ring);}for(let j=0;j<lon;j++){const th=j*2*Math.PI/lon;const merid=[];for(let i=0;i<=segs;i++){const phi=-Math.PI/2+i*(Math.PI/segs);merid.push([Math.cos(phi)*Math.cos(th),Math.sin(phi),Math.cos(phi)*Math.sin(th)]);}strokes.push(merid);}return strokes;}
+function get3DGeometry(shapeKey){if(Shape3DCache[shapeKey])return Shape3DCache[shapeKey];const g=shapeKey==='circle'?buildSphere():buildExtrudedShape(shapeKey);Shape3DCache[shapeKey]=g;return g;}
+
+// Audio graph
+let audioCtx=null;
+let analyser=null;
+let sourceNode=null;
+let audioReady=false;
+let audioDataArray=null;
+let decodedAudio=null;
+let userSeeking=false;
+const audioEl=document.getElementById('audioPlayer');
+let shapeAudioSource=null;
+let shapeAudioGain=null;
+function ensureAudioGraph(){
+  if(audioReady)return;
+  if(!audioCtx){audioCtx=new (window.AudioContext||window.webkitAudioContext)();}
+  sourceNode=audioCtx.createMediaElementSource(audioEl);
+  analyser=audioCtx.createAnalyser();
+  analyser.fftSize=2048;
+  analyser.smoothingTimeConstant=0.08;
+  sourceNode.connect(analyser);
+  analyser.connect(audioCtx.destination);
+  audioDataArray=new Uint8Array(analyser.fftSize);
+  audioReady=true;
+}
+async function decodeAudioFile(file){
+  if(!audioCtx){audioCtx=new (window.AudioContext||window.webkitAudioContext)();}
+  const buffer=await file.arrayBuffer();
+  try{decodedAudio=await audioCtx.decodeAudioData(buffer);}catch(err){console.error(err);decodedAudio=null;alert('Could not decode this audio file.');}
+}
+function fmtTime(sec){if(!isFinite(sec)||sec<0)sec=0;const m=Math.floor(sec/60);const s=Math.floor(sec%60);return m+':'+(s<10?'0':'')+s;}
+// Shape audio controls
+function stopShapeAudio(){
+  if(shapeAudioSource){try{shapeAudioSource.stop();}catch(e){}try{shapeAudioSource.disconnect();}catch(e){}shapeAudioSource=null;}
+  if(shapeAudioGain){try{shapeAudioGain.disconnect();}catch(e){}shapeAudioGain=null;}
+}
+async function playShapeAudio(){
+  if(!audioCtx){audioCtx=new (window.AudioContext||window.webkitAudioContext)();}
+  if(audioCtx.state==='suspended'){await audioCtx.resume();}
+  stopShapeAudio();
+  const sampleRate=audioCtx.sampleRate;
+  const totalSamples=Math.floor(sampleRate);
+  const buffer=audioCtx.createBuffer(2,totalSamples,sampleRate);
+  const left=buffer.getChannelData(0);
+  const right=buffer.getChannelData(1);
+  const fn=ShapeFns[state.shapeType];
+  const frequency=Math.max(0.1, state.frequency);
+  const phase=state.phase*Math.PI/180;
+  const amp=Math.min(1,Math.max(0.05, state.amplitude));
+  const rot=state.rotation*Math.PI/180;
+  const cosR=Math.cos(rot);
+  const sinR=Math.sin(rot);
+  for(let i=0;i<totalSamples;i++){
+    const t=i/sampleRate;
+    const p=fn((t*frequency*state.speed+phase/(2*Math.PI))%1);
+    const xr=p.x*cosR - p.y*sinR;
+    const yr=p.x*sinR + p.y*cosR;
+    left[i]=Math.max(-1,Math.min(1,xr*state.scale*amp*0.85));
+    right[i]=Math.max(-1,Math.min(1,yr*state.scale*amp*0.85));
+  }
+  shapeAudioSource=audioCtx.createBufferSource();
+  shapeAudioSource.buffer=buffer;
+  shapeAudioSource.loop=true;
+  shapeAudioGain=audioCtx.createGain();
+  shapeAudioGain.gain.value= Math.min(1, state.volume/100)*0.65;
+  shapeAudioSource.connect(shapeAudioGain);
+  shapeAudioGain.connect(audioCtx.destination);
+  shapeAudioSource.start();
+}
+document.getElementById('btnShapeAudio').addEventListener('click', playShapeAudio);
+document.getElementById('btnShapeStop').addEventListener('click', stopShapeAudio);
+document.getElementById('volume').addEventListener('input', ()=>{
+  if(shapeAudioGain){shapeAudioGain.gain.value= Math.min(1, state.volume/100)*0.65;}
+});
+// Reset button
+document.getElementById('btnReset').addEventListener('click', ()=>{
+  Object.assign(state, defaults);
+  document.querySelectorAll('#waveformType,#shapeType').forEach(elm=>{elm.value=defaults[elm.id];});
+  ['posX','posY','scale','rotation','rotX','rotY','rotZ','frequency','amplitude','phase','speed','zoom','persistence','brightness','volume'].forEach(k=>{
+    const elm=document.getElementById(k);
+    if(elm){elm.value=defaults[k];elm.dispatchEvent(new Event('input'));}
+  });
+  // toggle active classes for mode tabs
+  document.querySelectorAll('.mode-tab').forEach(t=>{
+    t.classList.toggle('active',t.dataset.mode===defaults.mode);
+  });
+  // toggle active for dim toggles
+  document.querySelectorAll('.toggle-btn[data-dim]').forEach(b=>{
+    b.classList.toggle('active',b.dataset.dim==='3d');
+  });
+  // toggle active for audio dims
+  document.querySelectorAll('[data-audiodim]').forEach(b=>{
+    b.classList.toggle('active',b.dataset.audiodim===defaults.audioDimension);
+  });
+  // stop audio
+  audioEl.pause();
+  audioEl.currentTime=0;
+  stopShapeAudio();
+  decodedAudio=null;
+  document.getElementById('fileDrop').textContent='Click to choose an audio file…';
+  document.getElementById('fileDrop').classList.remove('has-file');
+  document.getElementById('audioDimensionField').classList.add('hidden');
+  applyVisibility();
+  updateReadouts();
+});
+// Visibility toggle
+function applyVisibility(){
+  const m=state.mode;
+  document.querySelector('#sec-waveform').classList.toggle('hidden',m!=='waveform');
+  document.querySelector('#sec-shape').classList.toggle('hidden',m!=='shape');
+  document.querySelector('#sec-audio').classList.toggle('hidden',m!=='audio');
+  document.querySelector('#sec-transform').classList.toggle('hidden',m!=='shape');
+  document.querySelector('#sec-signal').classList.toggle('hidden',m==='audio');
+  document.querySelector('#field-rotation2d').classList.toggle('hidden',!(m==='shape'&&!state.is3D));
+  document.querySelector('#field-rotX').classList.toggle('hidden',!(m==='shape'&&state.is3D));
+  document.querySelector('#field-rotY').classList.toggle('hidden',!(m==='shape'&&state.is3D));
+  document.querySelector('#field-rotZ').classList.toggle('hidden',!(m==='shape'&&state.is3D));
+  document.querySelector('#audioDimensionField').classList.toggle('hidden',m!=='audio');
+  if(m==='shape'){
+    document.querySelector('#chanLabel').textContent=state.is3D?'CH1: X   CH2: Y (3D VECTOR)':'CH1: X   CH2: Y (XY MODE)';
+  }else if(m==='audio' && state.audioDimension==='2d'){
+    document.querySelector('#chanLabel').textContent='CH1: LEFT/X   CH2: RIGHT/Y (XY MODE)';
+  }else{
+    document.querySelector('#chanLabel').textContent='CH1: Y   CH2: TIME';
+  }
+}
+updateReadouts();
+applyVisibility();
+
+// Draw grid
+function drawGrid(){
+  const w=cssW;
+  const h=cssH;
+  ctx.fillStyle='#04140c';
+  ctx.fillRect(0,0,w,h);
+  const cols=10, rows=8;
+  const cw=w/cols, ch=h/rows;
+  ctx.lineWidth=1;
+  ctx.strokeStyle='rgba(70,180,120,0.16)';
+  ctx.beginPath();
+  for(let i=1;i<cols;i++){
+    const x=Math.round(i*cw)+0.5;
+    ctx.moveTo(x,0);
+    ctx.lineTo(x,h);
+  }
+  for(let j=1;j<rows;j++){
+    const y=Math.round(j*ch)+0.5;
+    ctx.moveTo(0,y);
+    ctx.lineTo(w,y);
+  }
+  ctx.stroke();
+  ctx.strokeStyle='rgba(90,220,150,0.32)';
+  ctx.beginPath();
+  const midX=Math.round(w/2)+0.5;
+  const midY=Math.round(h/2)+0.5;
+  ctx.moveTo(midX,0);
+  ctx.lineTo(midX,h);
+  ctx.moveTo(0,midY);
+  ctx.lineTo(w,midY);
+  ctx.stroke();
+  ctx.strokeStyle='rgba(90,220,150,0.28)';
+  ctx.beginPath();
+  const tick=4;
+  for(let i=0;i<=cols*5;i++){
+    const x=i*(w/(cols*5));
+    ctx.moveTo(x,midY-tick);
+    ctx.lineTo(x,midY+tick);
+  }
+  for(let j=0;j<=rows*5;j++){
+    const y=j*(h/(rows*5));
+    ctx.moveTo(midX-tick,y);
+    ctx.lineTo(midX+tick,y);
+  }
+  ctx.stroke();
+  ctx.strokeStyle='rgba(90,220,150,0.35)';
+  ctx.lineWidth=1;
+  ctx.strokeRect(0.5,0.5,w-1,h-1);
+}
+
+// Draw waveform
+function drawWaveform(dt){
+  const numPoints=420;
+  scrollPhase+=state.speed*dt*0.6;
+  const freq=state.frequency;
+  const amp=state.amplitude;
+  const phaseRad=state.phase*Math.PI/180;
+  const fn=Wave[state.waveformType];
+  traceStyle();
+  traceCtx.beginPath();
+  for(let i=0;i<numPoints;i++){
+    const xNorm=i/(numPoints-1);
+    const angle=2*Math.PI*freq*(xNorm/state.zoom+scrollPhase)+phaseRad;
+    const y=amp*fn(angle);
+    const px=xNorm*cssW;
+    const py=cssH/2 - y*cssH/2*0.88;
+    if(i===0) traceCtx.moveTo(px,py);
+    else traceCtx.lineTo(px,py);
+  }
+  traceCtx.stroke();
+}
+
+// Draw shape 2D
+function drawShape2D(dt){
+  const shapeKey=state.shapeType;
+  const fn=ShapeFns[shapeKey];
+  const nSamples=ShapeSamples[shapeKey]||150;
+  autoRotate2D+=state.speed*dt*0.35;
+  rippleCrawl+=state.speed*dt*0.8;
+  const rotTotal=state.rotation*Math.PI/180+autoRotate2D;
+  const cosR=Math.cos(rotTotal);
+  const sinR=Math.sin(rotTotal);
+  const ripplePhase=state.phase*Math.PI/180+rippleCrawl;
+  const freq=state.frequency;
+  const amp=state.amplitude*0.5;
+  traceStyle();
+  traceCtx.beginPath();
+  for(let i=0;i<=nSamples;i++){
+    const t=(i/nSamples);
+    const p=fn(t);
+    const ripple=1+amp*Math.sin(freq*t*2*Math.PI+ripplePhase);
+    const xm=p.x*ripple;
+    const ym=p.y*ripple;
+    const xr=xm*cosR - ym*sinR;
+    const yr=xm*sinR + ym*cosR;
+    const xs=xr*state.scale+state.posX;
+    const ys=yr*state.scale+state.posY;
+    const [px,py]=toScreen(xs,ys);
+    if(i===0) traceCtx.moveTo(px,py);
+    else traceCtx.lineTo(px,py);
+  }
+  traceCtx.stroke();
+}
+
+// Rotation
+function rot3(p,ax,ay,az){
+  let [x,y,z]=p;
+  // X rotation
+  let y1=y*Math.cos(ax)-z*Math.sin(ax);
+  let z1=y*Math.sin(ax)+z*Math.cos(ax);
+  y=y1;z=z1;
+  // Y rotation
+  let x2=x*Math.cos(ay)+z*Math.sin(ay);
+  let z2=-x*Math.sin(ay)+z*Math.cos(ay);
+  x=x2;z=z2;
+  // Z rotation
+  let x3=x*Math.cos(az)-y*Math.sin(az);
+  let y3=x*Math.sin(az)+y*Math.cos(az);
+  x=x3;y=y3;
+  return [x,y,z];
+}
+
+// Draw shape 3D
+function drawShape3D(dt){
+  const geo=get3DGeometry(state.shapeType);
+  autoRotate3D+=state.speed*dt*0.5;
+  const ax=state.rotX*Math.PI/180;
+  const ay=state.rotY*Math.PI/180+autoRotate3D;
+  const az=state.rotZ*Math.PI/180;
+  const pulse=1+(state.amplitude*0.4)*Math.sin(state.frequency*clock*2*Math.PI+state.phase*Math.PI/180);
+  traceStyle();
+  for(const stroke of geo){
+    traceCtx.beginPath();
+    for(let i=0;i<stroke.length;i++){
+      const p0=stroke[i];
+      const p=[p0[0]*pulse,p0[1]*pulse,p0[2]*pulse];
+      const r=rot3(p,ax,ay,az);
+      const persp=1/(2 - r[2]*0.55);
+      const xs=r[0]*persp*state.scale+state.posX;
+      const ys=r[1]*persp*state.scale+state.posY;
+      const [px,py]=toScreen(xs,ys);
+      if(i===0) traceCtx.moveTo(px,py);
+      else traceCtx.lineTo(px,py);
+    }
+    traceCtx.stroke();
+  }
+}
+
+// Draw audio 1D
+function drawAudio1D(){
+  traceStyle();
+  traceCtx.beginPath();
+  if(!audioReady||!analyser||(audioEl.paused && audioEl.currentTime===0)){
+    const y=cssH/2;
+    traceCtx.moveTo(0,y);
+    traceCtx.lineTo(cssW,y);
+    traceCtx.stroke();
+    return;
+  }
+  analyser.getByteTimeDomainData(audioDataArray);
+  const total=audioDataArray.length;
+  const visible=Math.max(64, Math.floor(total/states.zoom));
+  const start=Math.max(0, Math.floor((total-visible)/2));
+  const count=Math.min(visible,total-start);
+  for(let i=0;i<count;i++){
+    const sample=(audioDataArray[start+i]-128)/128;
+    const xNorm=i/(count-1);
+    const px=xNorm*cssW;
+    const py=cssH/2 - sample*cssH/2*0.88;
+    if(i===0) traceCtx.moveTo(px,py);
+    else traceCtx.lineTo(px,py);
+  }
+  traceCtx.stroke();
+}
+
+// Draw audio 2D
+function drawAudio2D(){
+  traceStyle();
+  traceCtx.beginPath();
+  if(!decodedAudio){
+    const x=cssW/2;
+    const y=cssH/2;
+    traceCtx.moveTo(x-30,y);
+    traceCtx.lineTo(x+30,y);
+    traceCtx.stroke();
+    return;
+  }
+  const channels=decodedAudio.numberOfChannels;
+  const left=decodedAudio.getChannelData(0);
+  const right=channels>1?decodedAudio.getChannelData(1):left;
+  const sampleRate=decodedAudio.sampleRate;
+  const center=Math.floor(audioEl.currentTime*sampleRate);
+  const windowSamples=Math.min(4096, Math.max(512, Math.floor(sampleRate/Math.max(.25,states.zoom)/4)));
+  const half=Math.floor(windowSamples/2);
+  let start=center-half;
+  if(start<0) start=0;
+  if(start+windowSamples>=left.length){
+    start=Math.max(0,left.length-windowSamples);
+  }
+  const count=Math.min(windowSamples,left.length-start);
+  const monoDelay=Math.floor(count*0.17);
+  for(let i=0;i<count;i++){
+    const xSample=left[start+i]||0;
+    let ySample;
+    if(channels>1){
+      ySample=right[start+i]||0;
+    }else{
+      const yi=Math.min(count-1,i+monoDelay);
+      ySample=left[start+yi]||0;
+    }
+    const px=cssW/2 + xSample*cssW*0.43;
+    const py=cssH/2 - ySample*cssH*0.43;
+    if(i===0) traceCtx.moveTo(px,py);
+    else traceCtx.lineTo(px,py);
+  }
+  traceCtx.stroke();
+}
+
+let lastTime=performance.now();
+let clock=0;
 let fpsLast=performance.now();
 let fpsCount=0;
 
@@ -1323,179 +1684,15 @@ function drawGrid(){
   ctx.strokeRect(0.5,0.5,w-1,h-1);
 }
 
-function drawWaveform(dt){
-  const numPoints=420;
-  scrollPhase+=state.speed*dt*0.6;
-  const freq=state.frequency;
-  const amp=state.amplitude;
-  const phaseRad=state.phase*Math.PI/180;
-  const fn=Wave[state.waveformType];
-  traceStyle();
-  traceCtx.beginPath();
-  for(let i=0;i<numPoints;i++){
-    const xNorm=i/(numPoints-1);
-    const angle=2*Math.PI*freq*(xNorm/state.zoom+scrollPhase)+phaseRad;
-    const y=amp*fn(angle);
-    const px=xNorm*cssW;
-    const py=cssH/2 - y*cssH/2*0.88;
-    if(i===0) traceCtx.moveTo(px,py);
-    else traceCtx.lineTo(px,py);
-  }
-  traceCtx.stroke();
-}
-
-function drawShape2D(dt){
-  const shapeKey=state.shapeType;
-  const fn=ShapeFns[shapeKey];
-  const nSamples=ShapeSamples[shapeKey]||150;
-  autoRotate2D+=state.speed*dt*0.35;
-  rippleCrawl+=state.speed*dt*0.8;
-  const rotTotal=state.rotation*Math.PI/180+autoRotate2D;
-  const cosR=Math.cos(rotTotal);
-  const sinR=Math.sin(rotTotal);
-  const ripplePhase=state.phase*Math.PI/180+rippleCrawl;
-  const freq=state.frequency;
-  const amp=state.amplitude*0.5;
-  traceStyle();
-  traceCtx.beginPath();
-  for(let i=0;i<=nSamples;i++){
-    const t=(i/nSamples);
-    const p=fn(t);
-    const ripple=1+amp*Math.sin(freq*t*2*Math.PI+ripplePhase);
-    const xm=p.x*ripple;
-    const ym=p.y*ripple;
-    const xr=xm*cosR - ym*sinR;
-    const yr=xm*sinR + ym*cosR;
-    const xs=xr*state.scale+state.posX;
-    const ys=yr*state.scale+state.posY;
-    const [px,py]=toScreen(xs,ys);
-    if(i===0) traceCtx.moveTo(px,py);
-    else traceCtx.lineTo(px,py);
-  }
-  traceCtx.stroke();
-}
-
-function rot3(p,ax,ay,az){
-  let [x,y,z]=p;
-  // Rotate around X
-  let y1=y*Math.cos(ax)-z*Math.sin(ax);
-  let z1=y*Math.sin(ax)+z*Math.cos(ax);
-  y=y1;z=z1;
-  // Rotate around Y
-  let x2=x*Math.cos(ay)+z*Math.sin(ay);
-  let z2=-x*Math.sin(ay)+z*Math.cos(ay);
-  x=x2;z=z2;
-  // Rotate around Z
-  let x3=x*Math.cos(az)-y*Math.sin(az);
-  let y3=x*Math.sin(az)+y*Math.cos(az);
-  x=x3;y=y3;
-  return [x,y,z];
-}
-
-function drawShape3D(dt){
-  const geo=get3DGeometry(state.shapeType);
-  autoRotate3D+=state.speed*dt*0.5;
-  const ax=state.rotX*Math.PI/180;
-  const ay=state.rotY*Math.PI/180+autoRotate3D;
-  const az=state.rotZ*Math.PI/180;
-  const pulse=1+(state.amplitude*0.4)*Math.sin(state.frequency*clock*2*Math.PI+state.phase*Math.PI/180);
-  traceStyle();
-  for(const stroke of geo){
-    traceCtx.beginPath();
-    for(let i=0;i<stroke.length;i++){
-      const p0=stroke[i];
-      const p=[p0[0]*pulse,p0[1]*pulse,p0[2]*pulse];
-      const r=rot3(p,ax,ay,az);
-      const persp=1/(2 - r[2]*0.55);
-      const xs=r[0]*persp*state.scale+state.posX;
-      const ys=r[1]*persp*state.scale+state.posY;
-      const [px,py]=toScreen(xs,ys);
-      if(i===0) traceCtx.moveTo(px,py);
-      else traceCtx.lineTo(px,py);
-    }
-    traceCtx.stroke();
-  }
-}
-
-function drawAudio1D(){
-  traceStyle();
-  traceCtx.beginPath();
-  if(!audioReady||!analyser||(audioEl.paused && audioEl.currentTime===0)){
-    const y=cssH/2;
-    traceCtx.moveTo(0,y);
-    traceCtx.lineTo(cssW,y);
-    traceCtx.stroke();
-    return;
-  }
-  analyser.getByteTimeDomainData(audioDataArray);
-  const total=audioDataArray.length;
-  const visible=Math.max(64, Math.floor(total/state.zoom));
-  const start=Math.max(0, Math.floor((total-visible)/2));
-  const count=Math.min(visible,total-start);
-  for(let i=0;i<count;i++){
-    const sample=(audioDataArray[start+i]-128)/128;
-    const xNorm=i/(count-1);
-    const px=xNorm*cssW;
-    const py=cssH/2 - sample*cssH/2*0.88;
-    if(i===0) traceCtx.moveTo(px,py);
-    else traceCtx.lineTo(px,py);
-  }
-  traceCtx.stroke();
-}
-
-function drawAudio2D(){
-  traceStyle();
-  traceCtx.beginPath();
-  if(!decodedAudio){
-    const x=cssW/2;
-    const y=cssH/2;
-    traceCtx.moveTo(x-30,y);
-    traceCtx.lineTo(x+30,y);
-    traceCtx.stroke();
-    return;
-  }
-  const channels=decodedAudio.numberOfChannels;
-  const left=decodedAudio.getChannelData(0);
-  const right=channels>1?decodedAudio.getChannelData(1):left;
-  const sampleRate=decodedAudio.sampleRate;
-  const center=Math.floor(audioEl.currentTime*sampleRate);
-  const windowSamples=Math.min(4096, Math.max(512, Math.floor(sampleRate/Math.max(.25,state.zoom)/4)));
-  const half=Math.floor(windowSamples/2);
-  let start=center-half;
-  if(start<0) start=0;
-  if(start+windowSamples>=left.length){
-    start=Math.max(0,left.length-windowSamples);
-  }
-  const count=Math.min(windowSamples,left.length-start);
-  const monoDelay=Math.floor(count*0.17);
-  for(let i=0;i<count;i++){
-    const xSample=left[start+i]||0;
-    let ySample;
-    if(channels>1){
-      ySample=right[start+i]||0;
-    }else{
-      const yi=Math.min(count-1,i+monoDelay);
-      ySample=left[start+yi]||0;
-    }
-    const px=cssW/2 + xSample*cssW*0.43;
-    const py=cssH/2 - ySample*cssH*0.43;
-    if(i===0) traceCtx.moveTo(px,py);
-    else traceCtx.lineTo(px,py);
-  }
-  traceCtx.stroke();
-}
-
-// Main render
-let lastTime=performance.now();
-function render(now){
-  const dt=Math.min(0.05,(now-lastTime)/1000);
+function draw(){
+  const now=performance.now();
+  const dt=(now-lastTime)/1000;
   lastTime=now;
-  clock+=dt;
-  // FPS update
+  // FPS
   fpsCount++;
   if(now-fpsLast>500){
     const fps=Math.round(fpsCount/((now-fpsLast)/1000));
-    readoutFps.innerHTML='FPS: <b>'+fps+'</b>';
+    document.getElementById('readoutFps').innerHTML='FPS: <b>'+fps+'</b>';
     fpsCount=0;
     fpsLast=now;
   }
@@ -1507,7 +1704,7 @@ function render(now){
   traceCtx.fillStyle=`rgba(0,0,0,${Math.max(0.015,fadeAlpha)})`;
   traceCtx.fillRect(0,0,cssW,cssH);
   traceCtx.globalCompositeOperation='source-over';
-  // Draw source
+  // Draw current source
   if(state.mode==='waveform'){
     drawWaveform(dt);
   }else if(state.mode==='shape'){
@@ -1516,15 +1713,39 @@ function render(now){
   }else{
     drawAudio();
   }
-  // Glow
   ctx.globalCompositeOperation='lighter';
   ctx.drawImage(traceCanvas,0,0,cssW,cssH);
   ctx.globalCompositeOperation='source-over';
-  requestAnimationFrame(render);
+  requestAnimationFrame(draw);
 }
-requestAnimationFrame(render);
+requestAnimationFrame(draw);
 
-})();
+// Helper functions
+function fmtTime(sec){
+  if(!isFinite(sec)||sec<0)sec=0;
+  const m=Math.floor(sec/60);
+  const s=Math.floor(sec%60);
+  return m+':'+(s<10?'0':'')+s;
+}
+function toScreen(nx,ny){
+  const cx=cssW/2;
+  const cy=cssH/2;
+  const half=Math.min(cssW,cssH)*0.42;
+  return [cx+nx*half, cy-ny*half];
+}
+function updateReadouts(){
+  document.getElementById('readoutMode').innerHTML='MODE: <b>'+state.mode.toUpperCase()+'</b>';
+  let src='';
+  if(state.mode==='waveform'){
+    src=state.waveformType.toUpperCase();
+  }else if(state.mode==='shape'){
+    src=state.shapeType.toUpperCase()+(state.is3D?' 3D':' 2D');
+  }else{
+    src='LINE IN · '+state.audioDimension.toUpperCase();
+  }
+  document.getElementById('readoutSrc').innerHTML='SRC: <b>'+src+'</b>';
+  document.getElementById('timeLabel').textContent='TIME/DIV: '+(1/states.zoom).toFixed(2)+'x';
+}
 </script>
 </body>
 </html>
