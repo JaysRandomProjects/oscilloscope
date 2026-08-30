@@ -3,19 +3,19 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>Virtual Oscilloscope</title>
+<title>Virtual Oscilloscope - HD CRT Precision</title>
 
 <style>
 :root{
-  --bezel-dark:#1a1c1a;
-  --bezel-mid:#26292a;
-  --bezel-light:#33373a;
-  --panel-bg:#202325;
-  --panel-border:#3a3f42;
-  --screen-bg:#04140c;
-  --screen-border:#0a0a0a;
-  --phosphor:#4dffa0;
-  --phosphor-dim:#1f6b46;
+  --bezel-dark:#141614;
+  --bezel-mid:#202324;
+  --bezel-light:#2c3033;
+  --panel-bg:#1a1d1e;
+  --panel-border:#32373a;
+  --screen-bg:#020b06;
+  --screen-border:#000;
+  --phosphor:#55ff99;
+  --phosphor-dim:#185938;
   --accent:#ff9c3d;
   --text-main:#d8ded9;
   --text-dim:#8a9490;
@@ -30,7 +30,7 @@ html,body{
   margin:0;
   padding:0;
   height:100%;
-  background:radial-gradient(ellipse at 50% -10%,#2b2f31 0%,#101213 55%,#0a0b0b 100%);
+  background:radial-gradient(ellipse at 50% -10%,#262a2c 0%,#0c0d0e 55%,#050606 100%);
   color:var(--text-main);
   font-family:var(--font-ui);
   -webkit-tap-highlight-color:transparent;
@@ -60,7 +60,7 @@ html,body{
   color:var(--phosphor);
   font-weight:700;
   font-size:14px;
-  text-shadow:0 0 8px rgba(77,255,160,.55);
+  text-shadow:0 0 10px rgba(85,255,153,.6);
 }
 
 .instrument{
@@ -70,9 +70,9 @@ html,body{
   border-radius:18px;
   padding:16px;
   box-shadow:
-    0 30px 60px rgba(0,0,0,.55),
-    inset 0 1px 0 rgba(255,255,255,.06),
-    inset 0 -2px 6px rgba(0,0,0,.6);
+    0 30px 60px rgba(0,0,0,.6),
+    inset 0 1px 0 rgba(255,255,255,.08),
+    inset 0 -2px 6px rgba(0,0,0,.7);
   display:grid;
   grid-template-columns:minmax(0,1fr) 300px;
   gap:14px;
@@ -83,14 +83,14 @@ html,body{
 }
 
 .screen-wrap{
-  background:linear-gradient(180deg,#111 0%,#0c0c0c 100%);
+  background:linear-gradient(180deg,#0a0a0a 0%,#050505 100%);
   border-radius:12px;
   padding:14px;
   display:flex;
   flex-direction:column;
   gap:10px;
   border:1px solid #000;
-  box-shadow:inset 0 2px 10px rgba(0,0,0,.7);
+  box-shadow:inset 0 2px 12px rgba(0,0,0,.8);
 }
 
 .screen-topbar{
@@ -111,12 +111,11 @@ html,body{
   background:#3a4038;
   margin-right:6px;
   vertical-align:middle;
-  box-shadow:inset 0 0 2px rgba(0,0,0,.6);
 }
 
 .status-dot.on{
   background:var(--led-on);
-  box-shadow:0 0 8px var(--led-on),0 0 2px var(--led-on);
+  box-shadow:0 0 10px var(--led-on);
 }
 
 .readout-group{
@@ -132,13 +131,13 @@ html,body{
   position:relative;
   width:100%;
   aspect-ratio:4 / 3;
-  background:radial-gradient(ellipse at 50% 40%,#0a2a1a 0%,var(--screen-bg) 70%);
+  background:radial-gradient(ellipse at 50% 40%,#051c10 0%,var(--screen-bg) 75%);
   border-radius:8px;
   border:2px solid var(--screen-border);
   overflow:hidden;
   box-shadow:
-    inset 0 0 40px rgba(0,0,0,.85),
-    inset 0 0 90px rgba(0,0,0,.6);
+    inset 0 0 50px rgba(0,0,0,.9),
+    inset 0 0 100px rgba(0,0,0,.7);
 }
 
 canvas#scope{
@@ -150,18 +149,33 @@ canvas#scope{
   display:block;
 }
 
+/* CRT SCANLINES LAYER */
+.screen-scanlines{
+  position:absolute;
+  inset:0;
+  pointer-events:none;
+  background:linear-gradient(
+    rgba(18, 16, 16, 0) 50%, 
+    rgba(0, 0, 0, 0.35) 50%
+  );
+  background-size: 100% 4px;
+  z-index: 2;
+}
+
 .screen-vignette{
   position:absolute;
   inset:0;
   pointer-events:none;
-  background:radial-gradient(ellipse at 50% 50%,transparent 55%,rgba(0,0,0,.55) 100%);
+  background:radial-gradient(ellipse at 50% 50%,transparent 50%,rgba(0,0,0,.7) 100%);
+  z-index: 3;
 }
 
 .screen-glass{
   position:absolute;
   inset:0;
   pointer-events:none;
-  background:linear-gradient(135deg,rgba(255,255,255,.05) 0%,transparent 30%);
+  background:linear-gradient(135deg,rgba(255,255,255,.07) 0%,transparent 35%);
+  z-index: 4;
 }
 
 .screen-footbar{
@@ -204,7 +218,7 @@ canvas#scope{
 }
 
 .mode-tab{
-  background:#181a1b;
+  background:#141617;
   border:1px solid var(--panel-border);
   color:var(--text-dim);
   font-family:var(--font-mono);
@@ -221,7 +235,7 @@ canvas#scope{
   color:#04140c;
   background:var(--phosphor);
   border-color:var(--phosphor);
-  box-shadow:0 0 10px rgba(77,255,160,.5);
+  box-shadow:0 0 12px rgba(85,255,153,.5);
   font-weight:700;
 }
 
@@ -247,7 +261,7 @@ select,input[type=range],input[type=text],input[type=file]{
 }
 
 select{
-  background:#15171a;
+  background:#121416;
   color:var(--text-main);
   border:1px solid var(--panel-border);
   border-radius:6px;
@@ -261,7 +275,7 @@ input[type=range]{
   appearance:none;
   height:4px;
   border-radius:2px;
-  background:#15171a;
+  background:#121416;
   border:1px solid #000;
   outline:none;
 }
@@ -295,7 +309,7 @@ input[type=range]::-moz-range-thumb{
 
 .toggle-btn{
   flex:1;
-  background:#181a1b;
+  background:#141617;
   border:1px solid var(--panel-border);
   color:var(--text-dim);
   font-family:var(--font-mono);
@@ -322,7 +336,7 @@ input[type=range]::-moz-range-thumb{
 .btn{
   flex:1;
   min-width:60px;
-  background:#181a1b;
+  background:#141617;
   color:var(--text-main);
   border:1px solid var(--panel-border);
   border-radius:6px;
@@ -403,7 +417,7 @@ input[type=range]::-moz-range-thumb{
 ::-webkit-scrollbar{width:8px;}
 ::-webkit-scrollbar-track{background:transparent;}
 ::-webkit-scrollbar-thumb{
-  background:#3a3f42;
+  background:#32373a;
   border-radius:4px;
 }
 
@@ -422,8 +436,8 @@ footer{
 
 <div class="app">
   <div class="title-row">
-    <span class="brand">◉ SCOPE-1</span>
-    <span>Virtual Dual-Trace Oscilloscope &amp; Waveform Visualizer</span>
+    <span class="brand">◉ SCOPE-1 HD</span>
+    <span>HD Precision Phosphor Oscilloscope</span>
   </div>
 
   <div class="instrument">
@@ -442,6 +456,7 @@ footer{
 
       <div class="screen-frame">
         <canvas id="scope"></canvas>
+        <div class="screen-scanlines"></div>
         <div class="screen-vignette"></div>
         <div class="screen-glass"></div>
       </div>
@@ -609,7 +624,7 @@ footer{
           <div class="field-row"><span>Audio Display Mode</span></div>
           <div class="toggle-row">
             <div class="toggle-btn active" data-audiodim="1d">1D Waveform</div>
-            <div class="toggle-btn" data-audiodim="2d">2D XY Vector</div>
+            <div class="toggle-btn" data-audiodim="2d">2D Vector XY</div>
           </div>
         </div>
 
@@ -637,7 +652,7 @@ footer{
       </div>
 
       <div class="section" id="sec-display">
-        <h3>Display</h3>
+        <h3>Display Settings</h3>
         <div class="field">
           <div class="field-row">
             <span>Time / Zoom</span>
@@ -645,13 +660,20 @@ footer{
           </div>
           <input type="range" id="zoom" min="0.25" max="4" step="0.05" value="1">
         </div>
+        <div class="field">
+          <div class="field-row">
+            <span>Phosphor Persistence</span>
+            <span class="val" id="v-persistence">0.70</span>
+          </div>
+          <input type="range" id="persistence" min="0.1" max="0.95" step="0.05" value="0.7">
+        </div>
       </div>
 
       <button class="reset-btn" id="btnReset">⟳ Reset to Defaults</button>
     </div>
   </div>
 
-  <footer>SCOPE-1 · 100% Mathematically Precise 3D Vector Visualizer</footer>
+  <footer>SCOPE-1 HD · Enhanced High-Definition Vector Engine</footer>
 </div>
 
 <audio id="audioPlayer" preload="metadata" style="display:none"></audio>
@@ -677,7 +699,8 @@ const defaults = {
   amplitude: 0.3,
   speed: 0.15,
   zoom: 1,
-  volume: 80
+  volume: 80,
+  persistence: 0.70
 };
 
 const state = Object.assign({}, defaults);
@@ -691,7 +714,7 @@ let cssW = 0, cssH = 0, dpr = 1;
 
 function resizeCanvas(){
   const rect = screenFrame.getBoundingClientRect();
-  dpr = Math.min(window.devicePixelRatio || 1, 2.5);
+  dpr = Math.min(window.devicePixelRatio || 1, 3);
   cssW = Math.max(1, Math.round(rect.width));
   cssH = Math.max(1, Math.round(rect.height));
 
@@ -702,17 +725,20 @@ function resizeCanvas(){
 window.addEventListener('resize', resizeCanvas);
 resizeCanvas();
 
-/* CRT DISPLAY BACKGROUND */
-function drawGrid(){
+/* HD CRT DISPLAY & GRID */
+function applyDecayAndGrid(){
   const w = cssW, h = cssH;
-  ctx.fillStyle = '#04140c';
+
+  // Simulated Phosphor Trail Decay Overlay
+  const fadeAlpha = 1 - state.persistence;
+  ctx.fillStyle = `rgba(2, 11, 6, ${fadeAlpha})`;
   ctx.fillRect(0, 0, w, h);
 
   const cols = 10, rows = 8;
   const cw = w / cols, ch = h / rows;
 
   ctx.lineWidth = 1;
-  ctx.strokeStyle = 'rgba(70,180,120,0.16)';
+  ctx.strokeStyle = 'rgba(70,180,120,0.12)';
   ctx.beginPath();
   for(let i = 1; i < cols; i++){
     const x = Math.round(i * cw) + 0.5;
@@ -724,7 +750,7 @@ function drawGrid(){
   }
   ctx.stroke();
 
-  ctx.strokeStyle = 'rgba(90,220,150,0.32)';
+  ctx.strokeStyle = 'rgba(90,220,150,0.25)';
   ctx.beginPath();
   const midX = Math.round(w / 2) + 0.5;
   const midY = Math.round(h / 2) + 0.5;
@@ -733,7 +759,7 @@ function drawGrid(){
   ctx.stroke();
 }
 
-/* 2D SHAPE GENERATION */
+/* HIGH DEFINITION SHAPES & MATH */
 function pointOnPolygon(t, verts){
   const n = verts.length;
   let p = ((t * n) % n + n) % n;
@@ -816,7 +842,7 @@ const ShapeFns = {
   }
 };
 
-/* 3D GEOMETRY GENERATION */
+/* 3D GEOMETRY */
 function buildExtrudedShape(shapeKey){
   const vertMap = { square: 4, triangle: 3, pentagon: 5, hexagon: 6, octagon: 8, star: 10, star8: 16 };
   const n = vertMap[shapeKey] || 8;
@@ -880,7 +906,7 @@ function buildIcosahedron(){
 function buildTorus(){
   const strokes = [];
   const R = 0.7, r = 0.3;
-  const segsU = 16, segsV = 10;
+  const segsU = 24, segsV = 14;
   for(let i = 0; i < segsU; i++){
     const u = (i / segsU) * 2 * Math.PI;
     const ring = [];
@@ -898,7 +924,7 @@ function buildTorus(){
 
 function buildMobius(){
   const strokes = [];
-  const uSegs = 24, vSegs = 6;
+  const uSegs = 36, vSegs = 8;
   for(let j = 0; j <= vSegs; j++){
     const v = -0.3 + (j / vSegs) * 0.6;
     const strip = [];
@@ -916,7 +942,7 @@ function buildMobius(){
 
 function buildSphere(){
   const strokes = [];
-  const rings = 8, segs = 20;
+  const rings = 12, segs = 28;
   for(let i = 1; i < rings; i++){
     const phi = -Math.PI / 2 + (i * Math.PI) / rings;
     const ring = [];
@@ -931,7 +957,7 @@ function buildSphere(){
 
 function build3DHeart(){
   const strokes = [];
-  const numRings = 10, segs = 24;
+  const numRings = 14, segs = 32;
   for(let i = 0; i <= numRings; i++){
     const u = (i / numRings) * Math.PI;
     const ring = [];
@@ -981,7 +1007,7 @@ function project3D(pt, rxDeg, ryDeg, rzDeg){
   return { x: x3 * scale, y: y3 * scale };
 }
 
-/* UI STATE & READOUTS */
+/* UI STATE & BINDINGS */
 const el = id => document.getElementById(id);
 
 function updateReadouts(){
@@ -1014,6 +1040,7 @@ bindSlider('frequency', 'frequency', v => v.toFixed(1) + ' Hz');
 bindSlider('amplitude', 'amplitude', v => v.toFixed(2));
 bindSlider('speed', 'speed', v => v.toFixed(2));
 bindSlider('zoom', 'zoom', v => v.toFixed(2) + '×');
+bindSlider('persistence', 'persistence', v => v.toFixed(2));
 
 el('waveformType').addEventListener('change', e => {
   state.waveformType = e.target.value;
@@ -1062,7 +1089,7 @@ audioDimBtns.forEach(btn => {
   });
 });
 
-/* AUDIO FILE PROCESSING & WEB AUDIO API */
+/* AUDIO & WEB AUDIO API */
 const fileDrop = el('fileDrop');
 const audioFileInput = el('audioFile');
 const audioPlayer = el('audioPlayer');
@@ -1111,8 +1138,8 @@ function loadAudioFile(file) {
 
     analyserL = audioCtx.createAnalyser();
     analyserR = audioCtx.createAnalyser();
-    analyserL.fftSize = 1024;
-    analyserR.fftSize = 1024;
+    analyserL.fftSize = 2048;
+    analyserR.fftSize = 2048;
 
     source.connect(splitter);
     splitter.connect(analyserL, 0);
@@ -1173,6 +1200,7 @@ el('btnReset').addEventListener('click', () => {
   el('amplitude').value = state.amplitude;
   el('speed').value = state.speed;
   el('zoom').value = state.zoom;
+  el('persistence').value = state.persistence;
   el('volume').value = state.volume;
   audioPlayer.volume = state.volume / 100;
   
@@ -1182,109 +1210,128 @@ el('btnReset').addEventListener('click', () => {
   updateReadouts();
 });
 
-/* RENDER ANIMATION LOOP */
+/* MULTI-PASS GLOW RENDERER */
+function renderTracePasses(drawPathFn) {
+  ctx.save();
+  ctx.lineCap = 'round';
+  ctx.lineJoin = 'round';
+
+  // Pass 1: Outer Ambient Glow
+  ctx.strokeStyle = 'rgba(85, 255, 153, 0.25)';
+  ctx.lineWidth = 5;
+  ctx.shadowColor = '#4dffa0';
+  ctx.shadowBlur = 12;
+  drawPathFn();
+
+  // Pass 2: Sharp Core Beam
+  ctx.strokeStyle = '#ffffff';
+  ctx.lineWidth = 1.25;
+  ctx.shadowColor = '#88ffbb';
+  ctx.shadowBlur = 3;
+  drawPathFn();
+
+  ctx.restore();
+}
+
+/* RENDER LOOP */
 let angle = 0;
 let phaseAcc = 0;
 
 function render(){
-  drawGrid();
+  applyDecayAndGrid();
   ctx.save();
   ctx.translate(cssW / 2, cssH / 2);
 
   const scaleFactor = Math.min(cssW, cssH) * 0.35 * state.scale * state.zoom;
-  ctx.strokeStyle = '#4dffa0';
-  ctx.lineWidth = 2;
-  ctx.shadowColor = '#4dffa0';
-  ctx.shadowBlur = 8;
-
   angle += state.speed * 2;
 
-  if(state.mode === 'waveform'){
-    ctx.beginPath();
-    const points = 300;
-    phaseAcc += (state.frequency / 1000) * 0.1;
-    for(let i = 0; i < points; i++){
-      const t = (i / points) * Math.PI * 4 + phaseAcc;
-      let yVal = 0;
-      if(state.waveformType === 'sine') yVal = Math.sin(t);
-      else if(state.waveformType === 'square') yVal = Math.sin(t) >= 0 ? 1 : -1;
-      else if(state.waveformType === 'triangle') yVal = (2 / Math.PI) * Math.asin(Math.sin(t));
-      else if(state.waveformType === 'sawtooth') yVal = 2 * (t / (2 * Math.PI) - Math.floor(0.5 + t / (2 * Math.PI)));
-
-      const x = (-0.8 + (i / points) * 1.6 + state.posX) * scaleFactor;
-      const y = (yVal * state.amplitude * 0.8 + state.posY) * scaleFactor;
-      if(i === 0) ctx.moveTo(x, y);
-      else ctx.lineTo(x, y);
-    }
-    ctx.stroke();
-  }
-  else if(state.mode === 'shape'){
-    if(state.is3D){
-      const geom = get3DGeometry(state.shapeType);
-      const rx = state.rotX + angle;
-      const ry = state.rotY + angle * 0.7;
-      const rz = state.rotZ;
-
-      geom.forEach(stroke => {
-        ctx.beginPath();
-        stroke.forEach((pt, i) => {
-          const proj = project3D(pt, rx, ry, rz);
-          const x = (proj.x + state.posX) * scaleFactor;
-          const y = (proj.y + state.posY) * scaleFactor;
-          if(i === 0) ctx.moveTo(x, y);
-          else ctx.lineTo(x, y);
-        });
-        ctx.stroke();
-      });
-    } else {
-      const fn = ShapeFns[state.shapeType] || ShapeFns.circle;
-      const samples = 250;
-      const rad = (state.rotation * Math.PI) / 180;
-      const cosR = Math.cos(rad), sinR = Math.sin(rad);
-
+  renderTracePasses(() => {
+    if(state.mode === 'waveform'){
       ctx.beginPath();
-      for(let i = 0; i <= samples; i++){
-        const p = fn(i / samples);
-        const rx = p.x * cosR - p.y * sinR;
-        const ry = p.x * sinR + p.y * cosR;
-        const x = (rx + state.posX) * scaleFactor;
-        const y = (ry + state.posY) * scaleFactor;
+      const points = 500;
+      phaseAcc += (state.frequency / 1000) * 0.1;
+      for(let i = 0; i < points; i++){
+        const t = (i / points) * Math.PI * 4 + phaseAcc;
+        let yVal = 0;
+        if(state.waveformType === 'sine') yVal = Math.sin(t);
+        else if(state.waveformType === 'square') yVal = Math.sin(t) >= 0 ? 1 : -1;
+        else if(state.waveformType === 'triangle') yVal = (2 / Math.PI) * Math.asin(Math.sin(t));
+        else if(state.waveformType === 'sawtooth') yVal = 2 * (t / (2 * Math.PI) - Math.floor(0.5 + t / (2 * Math.PI)));
+
+        const x = (-0.8 + (i / points) * 1.6 + state.posX) * scaleFactor;
+        const y = (yVal * state.amplitude * 0.8 + state.posY) * scaleFactor;
         if(i === 0) ctx.moveTo(x, y);
         else ctx.lineTo(x, y);
       }
       ctx.stroke();
     }
-  }
-  else if(state.mode === 'audio' && analyserL){
-    analyserL.getByteTimeDomainData(dataArrayL);
-    if(analyserR) analyserR.getByteTimeDomainData(dataArrayR);
+    else if(state.mode === 'shape'){
+      if(state.is3D){
+        const geom = get3DGeometry(state.shapeType);
+        const rx = state.rotX + angle;
+        const ry = state.rotY + angle * 0.7;
+        const rz = state.rotZ;
 
-    ctx.beginPath();
-    if(state.audioDimension === '1d'){
-      const sliceWidth = (scaleFactor * 2) / dataArrayL.length;
-      let x = -scaleFactor + state.posX * scaleFactor;
+        geom.forEach(stroke => {
+          ctx.beginPath();
+          stroke.forEach((pt, i) => {
+            const proj = project3D(pt, rx, ry, rz);
+            const x = (proj.x + state.posX) * scaleFactor;
+            const y = (proj.y + state.posY) * scaleFactor;
+            if(i === 0) ctx.moveTo(x, y);
+            else ctx.lineTo(x, y);
+          });
+          ctx.stroke();
+        });
+      } else {
+        const fn = ShapeFns[state.shapeType] || ShapeFns.circle;
+        const samples = 400;
+        const rad = (state.rotation * Math.PI) / 180;
+        const cosR = Math.cos(rad), sinR = Math.sin(rad);
 
-      for (let i = 0; i < dataArrayL.length; i++) {
-        const v = dataArrayL[i] / 128.0;
-        const y = ((v - 1) * scaleFactor * 0.8) + state.posY * scaleFactor;
-
-        if (i === 0) ctx.moveTo(x, y);
-        else ctx.lineTo(x, y);
-
-        x += sliceWidth;
-      }
-    } else {
-      // 2D Vector XY Audio Mode
-      for (let i = 0; i < dataArrayL.length; i++) {
-        const xVal = (dataArrayL[i] / 128.0 - 1) * scaleFactor + state.posX * scaleFactor;
-        const yVal = (dataArrayR[i] / 128.0 - 1) * scaleFactor + state.posY * scaleFactor;
-
-        if (i === 0) ctx.moveTo(xVal, yVal);
-        else ctx.lineTo(xVal, yVal);
+        ctx.beginPath();
+        for(let i = 0; i <= samples; i++){
+          const p = fn(i / samples);
+          const rx = p.x * cosR - p.y * sinR;
+          const ry = p.x * sinR + p.y * cosR;
+          const x = (rx + state.posX) * scaleFactor;
+          const y = (ry + state.posY) * scaleFactor;
+          if(i === 0) ctx.moveTo(x, y);
+          else ctx.lineTo(x, y);
+        }
+        ctx.stroke();
       }
     }
-    ctx.stroke();
-  }
+    else if(state.mode === 'audio' && analyserL){
+      analyserL.getByteTimeDomainData(dataArrayL);
+      if(analyserR) analyserR.getByteTimeDomainData(dataArrayR);
+
+      ctx.beginPath();
+      if(state.audioDimension === '1d'){
+        const sliceWidth = (scaleFactor * 2) / dataArrayL.length;
+        let x = -scaleFactor + state.posX * scaleFactor;
+
+        for (let i = 0; i < dataArrayL.length; i++) {
+          const v = dataArrayL[i] / 128.0;
+          const y = ((v - 1) * scaleFactor * 0.8) + state.posY * scaleFactor;
+
+          if (i === 0) ctx.moveTo(x, y);
+          else ctx.lineTo(x, y);
+
+          x += sliceWidth;
+        }
+      } else {
+        for (let i = 0; i < dataArrayL.length; i++) {
+          const xVal = (dataArrayL[i] / 128.0 - 1) * scaleFactor + state.posX * scaleFactor;
+          const yVal = (dataArrayR[i] / 128.0 - 1) * scaleFactor + state.posY * scaleFactor;
+
+          if (i === 0) ctx.moveTo(xVal, yVal);
+          else ctx.lineTo(xVal, yVal);
+        }
+      }
+      ctx.stroke();
+    }
+  });
 
   ctx.restore();
   requestAnimationFrame(render);
