@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>Virtual Oscilloscope</title>
+<title>Virtual Vector Oscilloscope & Audio Synthesizer</title>
 
 <style>
 :root{
@@ -214,7 +214,7 @@ canvas#scope{
 
 .mode-tabs{
   display:grid;
-  grid-template-columns:repeat(3,1fr);
+  grid-template-columns:repeat(2,1fr);
   gap:6px;
 }
 
@@ -257,7 +257,7 @@ canvas#scope{
 
 .field-row .val{color:var(--phosphor);}
 
-select,input[type=range],input[type=text],input[type=file]{
+select,input[type=range]{
   width:100%;
 }
 
@@ -364,29 +364,6 @@ input[type=range]::-moz-range-thumb{
   color:#eafff2;
 }
 
-.btn.danger:hover{
-  border-color:var(--accent);
-  color:var(--accent);
-}
-
-.file-drop{
-  border:1px dashed var(--panel-border);
-  border-radius:8px;
-  padding:12px 10px;
-  text-align:center;
-  font-size:11px;
-  color:var(--text-dim);
-  cursor:pointer;
-  font-family:var(--font-mono);
-  transition:all 0.2s ease;
-  word-break: break-all;
-}
-
-.file-drop:hover{
-  border-color:var(--phosphor);
-  color:var(--phosphor);
-}
-
 .section{
   display:flex;
   flex-direction:column;
@@ -438,7 +415,7 @@ footer{
 <div class="app">
   <div class="title-row">
     <span class="brand">◉ SCOPE-1 HD</span>
-    <span>HD Precision Phosphor Oscilloscope</span>
+    <span>Vector Oscilloscope & Synthesizer</span>
   </div>
 
   <div class="instrument">
@@ -463,18 +440,24 @@ footer{
       </div>
 
       <div class="screen-footbar">
-        <span id="chanLabel">CH1: X&nbsp;&nbsp;CH2: Y</span>
-        <span id="timeLabel">TIME/DIV: 1.00ms</span>
+        <span id="chanLabel">CH1: LEFT (X)&nbsp;&nbsp;CH2: RIGHT (Y)</span>
+        <span id="timeLabel">1 CONTINUOUS VECTOR TRACE</span>
       </div>
     </div>
 
     <div class="panel">
       <div>
+        <h3>Audio Control</h3>
+        <div class="btn-row">
+          <button class="btn primary" id="btnAudioToggle">▶ Start Audio Engine</button>
+        </div>
+      </div>
+
+      <div>
         <h3>Signal Source</h3>
         <div class="mode-tabs" id="modeTabs">
-          <div class="mode-tab" data-mode="waveform">Waveform</div>
-          <div class="mode-tab active" data-mode="shape">Shape</div>
-          <div class="mode-tab" data-mode="audio">Audio</div>
+          <div class="mode-tab active" data-mode="shape">Shape (Vector XY)</div>
+          <div class="mode-tab" data-mode="waveform">Waveform (1D)</div>
         </div>
       </div>
 
@@ -590,24 +573,19 @@ footer{
       </div>
 
       <div class="section" id="sec-signal">
-        <h3>Signal & Audio Output</h3>
-        <div class="field">
-          <div class="btn-row">
-            <button class="btn primary" id="btnAudioToggle">🔊 Play Synth Audio</button>
-          </div>
-        </div>
+        <h3>Acoustic Signal Controls</h3>
 
         <div class="field">
           <div class="field-row">
-            <span>Frequency</span>
+            <span>Base Audio Pitch</span>
             <span class="val" id="v-frequency">120.0 Hz</span>
           </div>
-          <input type="range" id="frequency" min="20" max="880" step="1" value="120">
+          <input type="range" id="frequency" min="40" max="600" step="1" value="120">
         </div>
 
         <div class="field">
           <div class="field-row">
-            <span>Amplitude</span>
+            <span>Audio Volume</span>
             <span class="val" id="v-amplitude">0.30</span>
           </div>
           <input type="range" id="amplitude" min="0" max="1" step="0.01" value="0.3">
@@ -622,47 +600,11 @@ footer{
         </div>
       </div>
 
-      <div class="section hidden" id="sec-audio">
-        <h3>Audio Input</h3>
-        <div class="file-drop" id="fileDrop">Click or Drag & Drop audio file here…</div>
-        <input type="file" id="audioFile" accept="audio/*" style="display:none">
-
-        <div class="field" id="audioDimensionField">
-          <div class="field-row"><span>Audio Display Mode</span></div>
-          <div class="toggle-row">
-            <div class="toggle-btn active" data-audiodim="1d">1D Waveform</div>
-            <div class="toggle-btn" data-audiodim="2d">2D Vector XY</div>
-          </div>
-        </div>
-
-        <div class="btn-row">
-          <button class="btn primary" id="btnPlay">▶ Play</button>
-          <button class="btn" id="btnPause">‖ Pause</button>
-          <button class="btn danger" id="btnStop">■ Stop</button>
-        </div>
-
-        <div class="field">
-          <div class="field-row">
-            <span>Seek</span>
-            <span class="val" id="v-seek">0:00 / 0:00</span>
-          </div>
-          <input type="range" id="seek" min="0" max="100" step="0.1" value="0">
-        </div>
-
-        <div class="field">
-          <div class="field-row">
-            <span>Volume</span>
-            <span class="val" id="v-volume">80%</span>
-          </div>
-          <input type="range" id="volume" min="0" max="100" step="1" value="80">
-        </div>
-      </div>
-
       <div class="section" id="sec-display">
         <h3>Display Settings</h3>
         <div class="field">
           <div class="field-row">
-            <span>Time / Zoom</span>
+            <span>Time Zoom</span>
             <span class="val" id="v-zoom">1.00×</span>
           </div>
           <input type="range" id="zoom" min="0.25" max="4" step="0.05" value="1">
@@ -680,10 +622,8 @@ footer{
     </div>
   </div>
 
-  <footer>SCOPE-1 HD · Enhanced High-Definition Vector Engine</footer>
+  <footer>SCOPE-1 HD · Synchronized Oscilloscope & Vector Synth</footer>
 </div>
-
-<audio id="audioPlayer" preload="metadata" style="display:none"></audio>
 
 <script>
 (function(){
@@ -694,7 +634,6 @@ const defaults = {
   waveformType: 'sine',
   shapeType: 'circle',
   is3D: false,
-  audioDimension: '1d',
   posX: 0,
   posY: 0,
   scale: 1,
@@ -706,9 +645,8 @@ const defaults = {
   amplitude: 0.3,
   speed: 0.15,
   zoom: 1,
-  volume: 80,
   persistence: 0.70,
-  synthAudioActive: false
+  audioActive: false
 };
 
 const state = Object.assign({}, defaults);
@@ -717,10 +655,6 @@ const state = Object.assign({}, defaults);
 const screenFrame = document.querySelector('.screen-frame');
 const canvas = document.getElementById('scope');
 const ctx = canvas.getContext('2d', { alpha: false });
-
-function applyCanvasAntialiasingSettings() {
-  ctx.imageSmoothingEnabled = false;
-}
 
 let cssW = 0, cssH = 0;
 
@@ -731,17 +665,12 @@ function resizeCanvas(){
 
   canvas.width = cssW;
   canvas.height = cssH;
-  ctx.setTransform(1, 0, 0, 1, 0, 0);
-  applyCanvasAntialiasingSettings();
 }
 window.addEventListener('resize', resizeCanvas);
 resizeCanvas();
 
-/* HD CRT DISPLAY & GRID */
 function applyDecayAndGrid(){
-  applyCanvasAntialiasingSettings();
   const w = cssW, h = cssH;
-
   const fadeAlpha = 1 - state.persistence;
   ctx.fillStyle = `rgba(2, 11, 6, ${fadeAlpha})`;
   ctx.fillRect(0, 0, w, h);
@@ -771,7 +700,7 @@ function applyDecayAndGrid(){
   ctx.stroke();
 }
 
-/* SHAPES & MATH */
+/* 2D GEOMETRIES (SINGLE PATH ENCLOSURES) */
 function pointOnPolygon(t, verts){
   const n = verts.length;
   let p = ((t * n) % n + n) % n;
@@ -854,48 +783,53 @@ const ShapeFns = {
   }
 };
 
-/* 3D ENGINE PIPELINE */
-function buildExtrudedShape(shapeKey){
+/* CONTINUOUS 1-LINE 3D VECTOR PIPELINE */
+function buildExtrudedSingleLine(shapeKey){
   const vertMap = { square: 4, triangle: 3, pentagon: 5, hexagon: 6, octagon: 8, star: 10, star8: 16 };
   const n = vertMap[shapeKey] || 8;
   const depth = 0.5;
-  const front = [], back = [];
   const fn = ShapeFns[shapeKey] || ShapeFns.circle;
 
+  const front = [], back = [];
   for(let i = 0; i < n; i++){
     const p = fn(i / n);
     front.push([p.x, p.y, depth]);
     back.push([p.x, p.y, -depth]);
   }
 
-  const strokes = [
-    front.concat([front[0]]),
-    back.concat([back[0]])
-  ];
-  for(let i = 0; i < n; i++) strokes.push([front[i], back[i]]);
-  return strokes;
+  const path = [];
+  for(let i = 0; i < n; i++){
+    const next = (i + 1) % n;
+    path.push(front[i], front[next], back[next], back[i], front[i]);
+  }
+  return path;
 }
 
-function buildTetrahedron(){
+function buildSingleLineSphere(){
+  const path = [];
+  const rings = 12, segs = 24;
+  for(let i = 0; i <= rings; i++){
+    const phi = -Math.PI / 2 + (i * Math.PI) / rings;
+    for(let j = 0; j <= segs; j++){
+      const theta = (j * 2 * Math.PI) / segs + (i % 2 === 1 ? Math.PI / segs : 0);
+      path.push([Math.cos(phi)*Math.cos(theta), Math.sin(phi), Math.cos(phi)*Math.sin(theta)]);
+    }
+  }
+  return path;
+}
+
+function buildSingleLineTetrahedron(){
   const s = 1 / Math.sqrt(2);
   const v = [[1, 0, -s], [-1, 0, -s], [0, 1, s], [0, -1, s]];
-  return [
-    [v[0], v[1], v[2], v[0]],
-    [v[0], v[3], v[1]],
-    [v[2], v[3]]
-  ];
+  return [v[0], v[1], v[2], v[0], v[3], v[1], v[3], v[2]];
 }
 
-function buildOctahedron(){
+function buildSingleLineOctahedron(){
   const v = [[1,0,0], [-1,0,0], [0,1,0], [0,-1,0], [0,0,1], [0,0,-1]];
-  return [
-    [v[0], v[2], v[1], v[3], v[0]],
-    [v[4], v[0]], [v[4], v[1]], [v[4], v[2]], [v[4], v[3]],
-    [v[5], v[0]], [v[5], v[1]], [v[5], v[2]], [v[5], v[3]]
-  ];
+  return [v[0], v[2], v[1], v[3], v[0], v[4], v[1], v[4], v[2], v[4], v[3], v[4], v[0], v[5], v[1], v[5], v[2], v[5], v[3], v[5]];
 }
 
-function buildIcosahedron(){
+function buildSingleLineIcosahedron(){
   const t = PHI;
   const v = [
     [-1, t, 0], [1, t, 0], [-1, -t, 0], [1, -t, 0],
@@ -906,81 +840,54 @@ function buildIcosahedron(){
     return [p[0]/len, p[1]/len, p[2]/len];
   });
 
-  const edges = [
-    [0,11],[0,5],[0,1],[0,7],[0,10],[1,5],[5,11],[11,10],[10,7],[7,1],
-    [3,9],[3,4],[3,2],[3,6],[3,8],[4,9],[9,8],[8,6],[6,2],[2,4],
-    [4,5],[4,11],[9,1],[9,5],[8,7],[8,1],[6,10],[6,7],[2,11],[2,10]
-  ];
-
-  return edges.map(e => [v[e[0]], v[e[1]]]);
+  const pathIndices = [0,11,5,1,7,10,0,5,1,11,10,7,0,1,9,5,4,11,2,10,6,7,8,1,3,9,4,3,2,6,3,8,9,4,5,11,2,4,8,6,10,2,3];
+  return pathIndices.map(idx => v[idx]);
 }
 
-function buildTorus(){
-  const strokes = [];
+function buildSingleLineTorus(){
+  const path = [];
   const R = 0.7, r = 0.3;
-  const segsU = 20, segsV = 12;
-  for(let i = 0; i < segsU; i++){
-    const u = (i / segsU) * 2 * Math.PI;
-    const ring = [];
-    for(let j = 0; j <= segsV; j++){
-      const v = (j / segsV) * 2 * Math.PI;
-      const x = (R + r * Math.cos(v)) * Math.cos(u);
-      const y = (R + r * Math.cos(v)) * Math.sin(u);
-      const z = r * Math.sin(v);
-      ring.push([x, y, z]);
-    }
-    strokes.push(ring);
+  const uSteps = 40, vSteps = 16;
+  const total = uSteps * vSteps;
+  for(let k = 0; k <= total; k++){
+    const u = (k / uSteps) * 2 * Math.PI;
+    const v = k * 0.5;
+    const x = (R + r * Math.cos(v)) * Math.cos(u);
+    const y = (R + r * Math.cos(v)) * Math.sin(u);
+    const z = r * Math.sin(v);
+    path.push([x, y, z]);
   }
-  return strokes;
+  return path;
 }
 
-function buildMobius(){
-  const strokes = [];
-  const uSegs = 32, vSegs = 6;
-  for(let j = 0; j <= vSegs; j++){
-    const v = -0.3 + (j / vSegs) * 0.6;
-    const strip = [];
-    for(let i = 0; i <= uSegs; i++){
-      const u = (i / uSegs) * 2 * Math.PI;
-      const x = (1 + (v / 2) * Math.cos(u / 2)) * Math.cos(u);
-      const y = (1 + (v / 2) * Math.cos(u / 2)) * Math.sin(u);
-      const z = (v / 2) * Math.sin(u / 2);
-      strip.push([x * 0.7, y * 0.7, z * 0.7]);
-    }
-    strokes.push(strip);
+function buildSingleLineMobius(){
+  const path = [];
+  const steps = 300;
+  for(let i = 0; i <= steps; i++){
+    const u = (i / steps) * 4 * Math.PI;
+    const v = Math.sin(i * 0.1) * 0.3;
+    const x = (1 + (v / 2) * Math.cos(u / 2)) * Math.cos(u);
+    const y = (1 + (v / 2) * Math.cos(u / 2)) * Math.sin(u);
+    const z = (v / 2) * Math.sin(u / 2);
+    path.push([x * 0.7, y * 0.7, z * 0.7]);
   }
-  return strokes;
+  return path;
 }
 
-function buildSphere(){
-  const strokes = [];
-  const rings = 10, segs = 20;
-  for(let i = 1; i < rings; i++){
-    const phi = -Math.PI / 2 + (i * Math.PI) / rings;
-    const ring = [];
-    for(let j = 0; j <= segs; j++){
-      const theta = (j * 2 * Math.PI) / segs;
-      ring.push([Math.cos(phi)*Math.cos(theta), Math.sin(phi), Math.cos(phi)*Math.sin(theta)]);
-    }
-    strokes.push(ring);
-  }
-  return strokes;
-}
-
-const Shape3DCache = {};
-function get3DGeometry(shapeKey){
-  if(Shape3DCache[shapeKey]) return Shape3DCache[shapeKey];
+const SingleLine3DCache = {};
+function get3DSingleLinePath(shapeKey){
+  if(SingleLine3DCache[shapeKey]) return SingleLine3DCache[shapeKey];
   let geom;
   switch(shapeKey){
-    case 'circle': geom = buildSphere(); break;
-    case 'tetrahedron': geom = buildTetrahedron(); break;
-    case 'octahedron': geom = buildOctahedron(); break;
-    case 'icosahedron': geom = buildIcosahedron(); break;
-    case 'torus': geom = buildTorus(); break;
-    case 'mobius': geom = buildMobius(); break;
-    default: geom = buildExtrudedShape(shapeKey); break;
+    case 'circle': geom = buildSingleLineSphere(); break;
+    case 'tetrahedron': geom = buildSingleLineTetrahedron(); break;
+    case 'octahedron': geom = buildSingleLineOctahedron(); break;
+    case 'icosahedron': geom = buildSingleLineIcosahedron(); break;
+    case 'torus': geom = buildSingleLineTorus(); break;
+    case 'mobius': geom = buildSingleLineMobius(); break;
+    default: geom = buildExtrudedSingleLine(shapeKey); break;
   }
-  Shape3DCache[shapeKey] = geom;
+  SingleLine3DCache[shapeKey] = geom;
   return geom;
 }
 
@@ -1000,52 +907,110 @@ function project3D(pt, rxDeg, ryDeg, rzDeg){
   return { x: x3 * scale, y: y3 * scale };
 }
 
-/* AUDIO ENGINE FOR FREQUENCY PLAYBACK */
-let synthCtx = null;
-let synthOsc = null;
-let synthGain = null;
+/* SAMPLER ENGINE FOR AUDIO AND VISUAL SYNCHRONIZATION */
+function samplePointAt(t){
+  if(state.mode === 'waveform'){
+    const angle = t * Math.PI * 2 * (100 / state.zoom);
+    let x = (t - 0.5) * 2;
+    let y = 0;
+    if(state.waveformType === 'sine') y = Math.sin(angle);
+    else if(state.waveformType === 'square') y = Math.sin(angle) >= 0 ? 1 : -1;
+    else if(state.waveformType === 'triangle') y = Math.asin(Math.sin(angle)) * (2 / Math.PI);
+    else if(state.waveformType === 'sawtooth') y = (angle % (2 * Math.PI)) / Math.PI - 1;
+    return { x: x, y: y * state.amplitude };
+  } else {
+    let rawX = 0, rawY = 0;
+    if(state.is3D){
+      const path = get3DSingleLinePath(state.shapeType);
+      const n = path.length - 1;
+      const p = ((t * n) % n + n) % n;
+      const idx = Math.floor(p);
+      const frac = p - idx;
+      const a = path[idx];
+      const b = path[idx + 1];
 
-function initSynth() {
-  if (synthCtx) return;
-  synthCtx = new (window.AudioContext || window.webkitAudioContext)();
-  synthOsc = synthCtx.createOscillator();
-  synthGain = synthCtx.createGain();
+      const spinSpeed = animTime * state.speed * 50;
+      const rx = state.rotX + spinSpeed;
+      const ry = state.rotY + spinSpeed;
+      const rz = state.rotZ;
 
-  synthOsc.type = state.waveformType;
-  synthOsc.frequency.setValueAtTime(state.frequency, synthCtx.currentTime);
-  synthGain.gain.setValueAtTime(0, synthCtx.currentTime);
+      const ptA = project3D(a, rx, ry, rz);
+      const ptB = project3D(b, rx, ry, rz);
 
-  synthOsc.connect(synthGain);
-  synthGain.connect(synthCtx.destination);
-  synthOsc.start();
-}
+      rawX = ptA.x + (ptB.x - ptA.x) * frac;
+      rawY = ptA.y + (ptB.y - ptA.y) * frac;
+    } else {
+      const fn = ShapeFns[state.shapeType] || ShapeFns.circle;
+      const p = fn(t);
+      const rot = (state.rotation * Math.PI) / 180 + animTime * state.speed;
+      rawX = p.x * Math.cos(rot) - p.y * Math.sin(rot);
+      rawY = p.x * Math.sin(rot) + p.y * Math.cos(rot);
+    }
 
-function updateSynthParams() {
-  if (!synthCtx) return;
-  if (synthCtx.state === 'suspended' && state.synthAudioActive) {
-    synthCtx.resume();
+    return {
+      x: state.posX + rawX * state.scale * state.amplitude,
+      y: state.posY + rawY * state.scale * state.amplitude
+    };
   }
-
-  synthOsc.type = state.waveformType;
-  synthOsc.frequency.setTargetAtTime(state.frequency, synthCtx.currentTime, 0.02);
-
-  const targetGain = (state.synthAudioActive && state.mode !== 'audio') ? (state.amplitude * 0.5) : 0;
-  synthGain.gain.setTargetAtTime(targetGain, synthCtx.currentTime, 0.02);
 }
 
-/* UI CONTROLS & EVENT BINDINGS */
+/* REAL-TIME AUDIO SYNTHESIZER (AUDIO WORKLET ENGINE) */
+let audioCtx = null;
+let scriptNode = null;
+let masterGain = null;
+
+function initAudioEngine(){
+  if(audioCtx) return;
+  audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  
+  const bufferSize = 2048;
+  scriptNode = audioCtx.createScriptProcessor(bufferSize, 0, 2);
+  masterGain = audioCtx.createGain();
+  masterGain.gain.setValueAtTime(0, audioCtx.currentTime);
+
+  let phase = 0;
+  scriptNode.onaudioprocess = function(e){
+    const outputL = e.outputBuffer.getChannelData(0);
+    const outputR = e.outputBuffer.getChannelData(1);
+    const delta = state.frequency / audioCtx.sampleRate;
+
+    for(let i = 0; i < bufferSize; i++){
+      if(state.audioActive){
+        const pt = samplePointAt(phase);
+        outputL[i] = Math.max(-1, Math.min(1, pt.x));
+        outputR[i] = Math.max(-1, Math.min(1, pt.y));
+        phase = (phase + delta) % 1.0;
+      } else {
+        outputL[i] = 0;
+        outputR[i] = 0;
+      }
+    }
+  };
+
+  scriptNode.connect(masterGain);
+  masterGain.connect(audioCtx.destination);
+}
+
+function updateAudioParams(){
+  if(!audioCtx) return;
+  if(audioCtx.state === 'suspended' && state.audioActive){
+    audioCtx.resume();
+  }
+  const targetGain = state.audioActive ? 0.8 : 0;
+  masterGain.gain.setTargetAtTime(targetGain, audioCtx.currentTime, 0.02);
+}
+
+/* UI CONTROLS & BINDINGS */
 const el = id => document.getElementById(id);
 
 function updateReadouts(){
   el('readoutMode').innerHTML = `MODE: <b>${state.mode.toUpperCase()}</b>`;
   if(state.mode === 'waveform'){
     el('readoutSrc').innerHTML = `SRC: <b>${state.waveformType.toUpperCase()}</b>`;
-  } else if(state.mode === 'shape'){
-    el('readoutSrc').innerHTML = `SRC: <b>${state.shapeType.toUpperCase()} · ${state.is3D ? '3D' : '2D'}</b>`;
   } else {
-    el('readoutSrc').innerHTML = `SRC: <b>AUDIO (${state.audioDimension.toUpperCase()})</b>`;
+    el('readoutSrc').innerHTML = `SRC: <b>${state.shapeType.toUpperCase()} · ${state.is3D ? '3D (1-LINE)' : '2D (1-LINE)'}</b>`;
   }
-  updateSynthParams();
+  updateAudioParams();
 }
 
 function bindSlider(id, key, fmt){
@@ -1053,7 +1018,7 @@ function bindSlider(id, key, fmt){
   input.addEventListener('input', () => {
     state[key] = parseFloat(input.value);
     if(label) label.textContent = fmt ? fmt(state[key]) : state[key].toFixed(2);
-    updateSynthParams();
+    updateAudioParams();
   });
 }
 
@@ -1072,11 +1037,11 @@ bindSlider('persistence', 'persistence', v => v.toFixed(2));
 
 const btnAudioToggle = el('btnAudioToggle');
 btnAudioToggle.addEventListener('click', () => {
-  initSynth();
-  state.synthAudioActive = !state.synthAudioActive;
-  btnAudioToggle.textContent = state.synthAudioActive ? '🔊 Synth Audio Active' : '🔇 Play Synth Audio';
-  btnAudioToggle.classList.toggle('primary', !state.synthAudioActive);
-  updateSynthParams();
+  initAudioEngine();
+  state.audioActive = !state.audioActive;
+  btnAudioToggle.textContent = state.audioActive ? '🔊 Stop Audio Engine' : '▶ Start Audio Engine';
+  btnAudioToggle.classList.toggle('primary', !state.audioActive);
+  updateAudioParams();
 });
 
 el('waveformType').addEventListener('change', e => {
@@ -1097,7 +1062,6 @@ modeTabs.forEach(tab => {
     state.mode = tab.getAttribute('data-mode');
     el('sec-waveform').classList.toggle('hidden', state.mode !== 'waveform');
     el('sec-shape').classList.toggle('hidden', state.mode !== 'shape');
-    el('sec-audio').classList.toggle('hidden', state.mode !== 'audio');
     updateReadouts();
   });
 });
@@ -1116,7 +1080,12 @@ dimBtns.forEach(btn => {
   });
 });
 
-/* RENDERING LOOP */
+el('btnReset').addEventListener('click', () => {
+  Object.assign(state, defaults);
+  location.reload();
+});
+
+/* RENDER LOOP */
 let animTime = 0;
 function render(){
   applyDecayAndGrid();
@@ -1126,68 +1095,23 @@ function render(){
   ctx.shadowColor = '#55ff99';
   ctx.shadowBlur = 8;
 
-  const cx = cssW / 2 + state.posX * (cssW / 2);
-  const cy = cssH / 2 - state.posY * (cssH / 2);
-  const baseRadius = (Math.min(cssW, cssH) * 0.3) * state.scale;
+  const cx = cssW / 2;
+  const cy = cssH / 2;
+  const baseRadius = Math.min(cssW, cssH) * 0.35;
 
-  if(state.mode === 'waveform'){
-    ctx.beginPath();
-    const samples = 400;
-    for(let i = 0; i <= samples; i++){
-      const t = i / samples;
-      const angle = (t * Math.PI * 2 * (100 / state.zoom));
-      let x = (t - 0.5) * cssW * 0.8;
-      let y = 0;
-      if(state.waveformType === 'sine') y = Math.sin(angle);
-      else if(state.waveformType === 'square') y = Math.sin(angle) >= 0 ? 1 : -1;
-      else if(state.waveformType === 'triangle') y = Math.asin(Math.sin(angle)) * (2 / Math.PI);
-      else if(state.waveformType === 'sawtooth') y = (angle % (2 * Math.PI)) / Math.PI - 1;
+  ctx.beginPath();
+  const samples = 1000;
+  for(let i = 0; i <= samples; i++){
+    const t = i / samples;
+    const pt = samplePointAt(t);
 
-      y *= baseRadius * state.amplitude;
-      x += cx;
-      y = cy - y;
-      if(i === 0) ctx.moveTo(x, y);
-      else ctx.lineTo(x, y);
-    }
-    ctx.stroke();
-  } else if(state.mode === 'shape'){
-    if(state.is3D){
-      const geom = get3DGeometry(state.shapeType);
-      const spinSpeed = animTime * state.speed * 50;
-      const rx = state.rotX + spinSpeed;
-      const ry = state.rotY + spinSpeed;
-      const rz = state.rotZ;
+    const screenX = cx + pt.x * baseRadius;
+    const screenY = cy - pt.y * baseRadius;
 
-      geom.forEach(stroke => {
-        ctx.beginPath();
-        stroke.forEach((pt, idx) => {
-          const projected = project3D(pt, rx, ry, rz);
-          const x = cx + projected.x * baseRadius;
-          const y = cy - projected.y * baseRadius;
-          if(idx === 0) ctx.moveTo(x, y);
-          else ctx.lineTo(x, y);
-        });
-        ctx.stroke();
-      });
-    } else {
-      ctx.beginPath();
-      const samples = 400;
-      const fn = ShapeFns[state.shapeType] || ShapeFns.circle;
-      const rot = (state.rotation * Math.PI) / 180 + animTime * state.speed;
-
-      for(let i = 0; i <= samples; i++){
-        const t = i / samples;
-        const p = fn(t);
-        let x = p.x * Math.cos(rot) - p.y * Math.sin(rot);
-        let y = p.x * Math.sin(rot) + p.y * Math.cos(rot);
-        x = cx + x * baseRadius;
-        y = cy - y * baseRadius;
-        if(i === 0) ctx.moveTo(x, y);
-        else ctx.lineTo(x, y);
-      }
-      ctx.stroke();
-    }
+    if(i === 0) ctx.moveTo(screenX, screenY);
+    else ctx.lineTo(screenX, screenY);
   }
+  ctx.stroke();
 
   ctx.shadowBlur = 0;
   animTime += 0.02;
