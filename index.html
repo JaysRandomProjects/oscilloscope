@@ -2,345 +2,295 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>Precision Laboratory Oscilloscope</title>
-
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Interactive Vector & Signal Oscilloscope</title>
 <style>
-:root {
-  --bezel-outer: #151719;
-  --bezel-inner: #24282c;
-  --panel-bg: #1c1f22;
-  --panel-border: #34393e;
-  --screen-bg: #030d07;
-  --phosphor: #33ff77;
-  --phosphor-glow: rgba(51, 255, 119, 0.4);
-  --ch1-color: #ffcc00;
-  --ch2-color: #00ccff;
-  --text-main: #d0d7de;
-  --text-dim: #7d8590;
-  --knob-cap: #30363d;
-  --knob-body: #161b22;
-  --led-green: #3fb950;
-  --led-red: #f85149;
-  --font-mono: "SF Mono", "Consolas", "Roboto Mono", monospace;
-  --font-ui: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-}
+  :root {
+    --bg-color: #0c0f12;
+    --card-bg: #161b22;
+    --border-color: #21262d;
+    --accent-color: #58a6ff;
+    --text-primary: #f0f6fc;
+    --text-secondary: #8b949e;
+    --phosphor-green: #33ff77;
+    --ch1-yellow: #e3b341;
+    --ch2-blue: #58a6ff;
+  }
 
-* { box-sizing: border-box; user-select: none; }
+  * {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  }
 
-html, body {
-  margin: 0; padding: 0; height: 100%;
-  background: radial-gradient(circle at 50% 30%, #22262a 0%, #0d0e10 100%);
-  color: var(--text-main); font-family: var(--font-ui);
-}
+  body {
+    background-color: var(--bg-color);
+    color: var(--text-primary);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+    padding: 20px;
+  }
 
-.app {
-  min-height: 100%; display: flex; flex-direction: column;
-  align-items: center; justify-content: center; padding: 12px; gap: 10px;
-}
+  .container {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    width: 100%;
+    max-width: 1100px;
+  }
 
-.header {
-  display: flex; justify-content: space-between; align-items: baseline; width: 100%;
-  max-width: 1280px; padding: 0 4px; font-family: var(--font-mono);
-  font-size: 11px; color: var(--text-dim); letter-spacing: 1px;
-}
+  header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
 
-.scope-container {
-  width: 100%; max-width: 1280px;
-  background: linear-gradient(180deg, var(--bezel-inner) 0%, var(--bezel-outer) 100%);
-  border-radius: 12px; padding: 16px;
-  box-shadow: 0 25px 50px -12px rgba(0,0,0,0.8), inset 0 1px 1px rgba(255,255,255,0.1);
-  display: grid; grid-template-columns: minmax(0, 1.3fr) 380px; gap: 16px;
-  border: 1px solid #000;
-}
+  h1 {
+    font-size: 1.25rem;
+    font-weight: 600;
+  }
 
-@media(max-width: 1024px) {
-  .scope-container { grid-template-columns: 1fr; }
-}
+  .badge {
+    font-size: 0.75rem;
+    background: rgba(56, 139, 253, 0.15);
+    color: var(--accent-color);
+    padding: 4px 8px;
+    border-radius: 12px;
+    border: 1px solid rgba(56, 139, 253, 0.4);
+  }
 
-.screen-assembly {
-  background: #000; border-radius: 8px; padding: 12px;
-  border: 2px solid #111; box-shadow: inset 0 0 20px rgba(0,0,0,0.9);
-  display: flex; flex-direction: column; gap: 8px;
-}
+  .main-layout {
+    display: grid;
+    grid-template-columns: 1fr 320px;
+    gap: 20px;
+  }
 
-.screen-header {
-  display: flex; justify-content: space-between; font-family: var(--font-mono);
-  font-size: 11px; background: #080a09; padding: 6px 10px; border-radius: 4px;
-  border: 1px solid #151a17; color: var(--phosphor);
-}
+  @media (max-width: 850px) {
+    .main-layout {
+      grid-template-columns: 1fr;
+    }
+  }
 
-.status-badge {
-  display: inline-flex; align-items: center; gap: 6px; font-weight: bold;
-}
+  .display-container {
+    background: #000;
+    border-radius: 12px;
+    border: 1px solid var(--border-color);
+    overflow: hidden;
+    position: relative;
+    aspect-ratio: 4/3;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+  }
 
-.led {
-  width: 8px; height: 8px; border-radius: 50%; background: #333;
-}
-.led.green { background: var(--led-green); box-shadow: 0 0 8px var(--led-green); }
-.led.red { background: var(--led-red); box-shadow: 0 0 8px var(--led-red); }
+  canvas {
+    width: 100%;
+    height: 100%;
+    display: block;
+  }
 
-.screen-viewport {
-  position: relative; width: 100%; aspect-ratio: 4 / 3;
-  background: var(--screen-bg); border-radius: 4px; overflow: hidden;
-  box-shadow: inset 0 0 50px rgba(0,0,0,0.95);
-  border: 1px solid #122419;
-}
+  .sidebar {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
 
-canvas#scopeCanvas {
-  position: absolute; inset: 0; width: 100%; height: 100%; display: block;
-}
+  .panel {
+    background: var(--card-bg);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    padding: 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
 
-.screen-overlay {
-  position: absolute; inset: 0; pointer-events: none;
-  background: radial-gradient(circle at 50% 50%, transparent 60%, rgba(0,0,0,0.6) 100%);
-}
+  .panel-title {
+    font-size: 0.85rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--text-secondary);
+    margin-bottom: 4px;
+  }
 
-.control-panel {
-  background: var(--panel-bg); border: 1px solid var(--panel-border);
-  border-radius: 8px; padding: 12px; display: flex; flex-direction: column;
-  gap: 12px; max-height: 640px; overflow-y: auto;
-}
+  .control-group {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
 
-.panel-section {
-  background: #14171a; border: 1px solid #282d33; border-radius: 6px;
-  padding: 10px; display: flex; flex-direction: column; gap: 8px;
-}
+  label {
+    font-size: 0.8rem;
+    color: var(--text-secondary);
+    display: flex;
+    justify-content: space-between;
+  }
 
-.section-title {
-  font-family: var(--font-mono); font-size: 10px; text-transform: uppercase;
-  color: var(--text-dim); letter-spacing: 1px; border-bottom: 1px solid #282d33;
-  padding-bottom: 4px; margin-bottom: 2px; display: flex; justify-content: space-between;
-}
+  select, input[type="range"] {
+    width: 100%;
+  }
 
-.control-grid {
-  display: grid; grid-template-columns: repeat(auto-fit, minmax(80px, 1fr)); gap: 8px;
-}
+  select {
+    background: #0d1117;
+    border: 1px solid var(--border-color);
+    color: var(--text-primary);
+    padding: 8px 12px;
+    border-radius: 6px;
+    outline: none;
+    font-size: 0.875rem;
+    cursor: pointer;
+  }
 
-.knob-control {
-  display: flex; flex-direction: column; align-items: center; gap: 4px;
-}
+  select:focus {
+    border-color: var(--accent-color);
+  }
 
-.knob-label {
-  font-family: var(--font-mono); font-size: 9px; color: var(--text-dim); text-align: center;
-}
+  .button-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+  }
 
-.knob {
-  width: 44px; height: 44px; border-radius: 50%;
-  background: conic-gradient(from 180deg, var(--knob-body), var(--knob-cap), var(--knob-body));
-  border: 2px solid #30363d; position: relative; cursor: pointer;
-  box-shadow: 0 4px 6px rgba(0,0,0,0.4); touch-action: none;
-}
+  button {
+    background: #21262d;
+    border: 1px solid var(--border-color);
+    color: var(--text-primary);
+    padding: 8px 12px;
+    border-radius: 6px;
+    font-size: 0.85rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+  }
 
-.knob::after {
-  content: ''; position: absolute; top: 4px; left: 50%; transform: translateX(-50%);
-  width: 3px; height: 10px; background: var(--phosphor); border-radius: 2px;
-}
+  button:hover {
+    background: #30363d;
+  }
 
-.knob-value {
-  font-family: var(--font-mono); font-size: 9px; color: var(--phosphor);
-}
+  button.active {
+    background: var(--accent-color);
+    color: #fff;
+    border-color: var(--accent-color);
+  }
 
-.btn-group { display: flex; gap: 4px; width: 100%; }
+  input[type="range"] {
+    accent-color: var(--accent-color);
+    cursor: pointer;
+  }
 
-.btn {
-  flex: 1; padding: 6px 4px; background: #21262d; border: 1px solid #363b42;
-  border-radius: 4px; color: var(--text-main); font-family: var(--font-mono);
-  font-size: 10px; cursor: pointer; text-align: center; transition: all 0.1s;
-}
-
-.btn:hover { background: #30363d; }
-.btn.active {
-  background: var(--phosphor); color: #000; font-weight: bold;
-  border-color: var(--phosphor); box-shadow: 0 0 8px var(--phosphor-glow);
-}
-
-select {
-  background: #0d1117; color: var(--text-main); border: 1px solid #30363d;
-  padding: 6px; border-radius: 4px; font-family: var(--font-mono); font-size: 10px;
-  width: 100%; outline: none;
-}
-
-.readout-val { color: var(--phosphor); font-weight: bold; }
-
+  .val-display {
+    color: var(--text-primary);
+    font-weight: 500;
+  }
 </style>
 </head>
 <body>
 
-<div class="app">
-  <div class="header">
-    <span>TEK-SIM 2465B ANALOG/DIGITAL OSCILLOSCOPE</span>
-    <span>CALIBRATION: PASSED</span>
-  </div>
+<div class="container">
+  <header>
+    <h1>Digital Oscilloscope & Visualizer</h1>
+    <span class="badge">WebGl / Vector Engine</span>
+  </header>
 
-  <div class="scope-container">
-    <div class="screen-assembly">
-      <div class="screen-header">
-        <div class="status-badge"><span class="led green" id="trigLed"></span><span id="trigStatus">TRIG'D</span></div>
-        <div>MODE: <span id="readoutDisplayMode" class="readout-val">YT (CH1+CH2)</span></div>
-        <div>TIME/DIV: <span id="readoutTimeDiv" class="readout-val">1.0ms</span></div>
-      </div>
-
-      <div class="screen-viewport">
-        <canvas id="scopeCanvas"></canvas>
-        <div class="screen-overlay"></div>
-      </div>
+  <div class="main-layout">
+    <div class="display-container">
+      <canvas id="scopeCanvas"></canvas>
     </div>
 
-    <div class="control-panel">
-      <div class="panel-section">
-        <div class="section-title">Horizontal (Timebase)</div>
-        <div class="control-grid">
-          <div class="knob-control">
-            <div class="knob-label">TIME / DIV</div>
-            <div class="knob" id="knobTimeDiv"></div>
-            <div class="knob-value" id="valTimeDiv">1.0ms</div>
-          </div>
-          <div class="knob-control">
-            <div class="knob-label">X POS</div>
-            <div class="knob" id="knobHPos"></div>
-            <div class="knob-value" id="valHPos">0.0</div>
-          </div>
+    <div class="sidebar">
+      <div class="panel">
+        <div class="panel-title">Display Mode</div>
+        <div class="button-grid">
+          <button id="btnModeYT" class="active">Y-T Dual</button>
+          <button id="btnModeXY">X-Y Vector</button>
         </div>
       </div>
 
-      <div class="panel-section">
-        <div class="section-title">CH1 Vertical <span style="color:var(--ch1-color)">●</span></div>
-        <div class="btn-group">
-          <button class="btn active" id="btnCh1DC">DC</button>
-          <button class="btn" id="btnCh1AC">AC</button>
-          <button class="btn" id="btnCh1GND">GND</button>
+      <div class="panel">
+        <div class="panel-title" style="color: var(--ch1-yellow);">Channel 1 Signal</div>
+        <div class="control-group">
+          <select id="selectCh1">
+            <optgroup label="Standard Signals">
+              <option value="sine">1 kHz Sine Wave</option>
+              <option value="square">1 kHz Square Wave</option>
+              <option value="triangle">1 kHz Triangle Wave</option>
+            </optgroup>
+            <optgroup label="3D Mesh Shapes">
+              <option value="torus">3D Torus</option>
+              <option value="cube">3D Cube</option>
+              <option value="sphere">3D Sphere</option>
+              <option value="cone">3D Cone</option>
+              <option value="cylinder">3D Cylinder</option>
+              <option value="icosahedron">3D Icosahedron</option>
+              <option value="cuboctahedron">3D Cuboctahedron</option>
+              <option value="heart3d">3D Heart</option>
+              <option value="prismTriangle">3D Triangular Prism</option>
+              <option value="prismStar">3D Star Prism</option>
+            </optgroup>
+            <optgroup label="2D Vector Paths">
+              <option value="lissajous32">3:2 Lissajous Knot</option>
+              <option value="trefoil">Trefoil Knot</option>
+              <option value="rose">8-Petal Rose</option>
+              <option value="star2d">5-Point Star</option>
+              <option value="heart2d">Cardioid Heart</option>
+            </optgroup>
+          </select>
         </div>
-        <div class="control-grid" style="margin-top:6px;">
-          <div class="knob-control">
-            <div class="knob-label">VOLTS / DIV</div>
-            <div class="knob" id="knobCh1Volts"></div>
-            <div class="knob-value" id="valCh1Volts">1.0V</div>
-          </div>
-          <div class="knob-control">
-            <div class="knob-label">Y POS</div>
-            <div class="knob" id="knobCh1Pos"></div>
-            <div class="knob-value" id="valCh1Pos">0.0</div>
-          </div>
-        </div>
-        <select id="selectCh1Signal" style="margin-top:6px;">
-          <optgroup label="Standard Oscilloscope Signals">
-            <option value="sine">Signal: 1 kHz Sine Wave</option>
-            <option value="square">Signal: 1 kHz Square Wave</option>
-            <option value="triangle">Signal: 1 kHz Triangle Wave</option>
-            <option value="cal">Signal: 1 kHz Calibrator Square (5V)</option>
-          </optgroup>
-          <optgroup label="3D Volumetric Mesh Vector Waveforms">
-            <option value="torus">Shape: 3D Torus / Donut</option>
-            <option value="cube">Shape: 3D Wireframe Cube</option>
-            <option value="sphere">Shape: 3D Sphere Mesh</option>
-            <option value="cone">Shape: 3D Cone</option>
-            <option value="cylinder">Shape: 3D Cylinder</option>
-            <option value="icosahedron">Shape: 3D Icosahedron (20-Face)</option>
-            <option value="cuboctahedron">Shape: 3D Cuboctahedron</option>
-            <option value="heart3d">Shape: 3D Parametric Heart</option>
-            <option value="prismTriangle">Shape: 3D Triangular Prism</option>
-            <option value="prismStar">Shape: 3D Star Prism</option>
-          </optgroup>
-          <optgroup label="2D Complex Vector Waveforms">
-            <option value="lissajous32">Shape: 3:2 Lissajous Knot</option>
-            <option value="trefoil">Shape: Trefoil Knot</option>
-            <option value="rose">Shape: 8-Petal Rose</option>
-            <option value="star2d">Shape: 5-Point Star</option>
-            <option value="heart2d">Shape: Cardioid Heart</option>
-          </optgroup>
-        </select>
-      </div>
-
-      <div class="panel-section">
-        <div class="section-title">CH2 Vertical <span style="color:var(--ch2-color)">●</span></div>
-        <div class="btn-group">
-          <button class="btn active" id="btnCh2DC">DC</button>
-          <button class="btn" id="btnCh2AC">AC</button>
-          <button class="btn" id="btnCh2GND">GND</button>
-        </div>
-        <div class="control-grid" style="margin-top:6px;">
-          <div class="knob-control">
-            <div class="knob-label">VOLTS / DIV</div>
-            <div class="knob" id="knobCh2Volts"></div>
-            <div class="knob-value" id="valCh2Volts">1.0V</div>
-          </div>
-          <div class="knob-control">
-            <div class="knob-label">Y POS</div>
-            <div class="knob" id="knobCh2Pos"></div>
-            <div class="knob-value" id="valCh2Pos">0.0</div>
-          </div>
-        </div>
-        <select id="selectCh2Signal" style="margin-top:6px;">
-          <optgroup label="Standard Oscilloscope Signals">
-            <option value="cosine">Signal: 1 kHz Cosine Wave</option>
-            <option value="sawtooth">Signal: 400 Hz Sawtooth</option>
-            <option value="noise">Signal: Thermal Noise</option>
-          </optgroup>
-          <optgroup label="3D Volumetric Mesh Vector Waveforms">
-            <option value="torus">Shape: 3D Torus / Donut</option>
-            <option value="cube">Shape: 3D Wireframe Cube</option>
-            <option value="sphere">Shape: 3D Sphere Mesh</option>
-            <option value="cone">Shape: 3D Cone</option>
-            <option value="cylinder">Shape: 3D Cylinder</option>
-            <option value="icosahedron">Shape: 3D Icosahedron (20-Face)</option>
-            <option value="cuboctahedron">Shape: 3D Cuboctahedron</option>
-            <option value="heart3d">Shape: 3D Parametric Heart</option>
-            <option value="prismTriangle">Shape: 3D Triangular Prism</option>
-            <option value="prismStar">Shape: 3D Star Prism</option>
-          </optgroup>
-          <optgroup label="2D Complex Vector Waveforms">
-            <option value="lissajous32">Shape: 3:2 Lissajous Knot</option>
-            <option value="trefoil">Shape: Trefoil Knot</option>
-            <option value="rose">Shape: 8-Petal Rose</option>
-            <option value="star2d">Shape: 5-Point Star</option>
-            <option value="heart2d">Shape: Cardioid Heart</option>
-          </optgroup>
-        </select>
-      </div>
-
-      <div class="panel-section">
-        <div class="section-title">Trigger Engine</div>
-        <div class="btn-group">
-          <button class="btn active" id="btnTrigAuto">AUTO</button>
-          <button class="btn" id="btnTrigNorm">NORM</button>
-          <button class="btn" id="btnTrigSingle">SINGLE</button>
-        </div>
-        <div class="btn-group" style="margin-top:4px;">
-          <button class="btn active" id="btnTrigSlopePos">EDGE +</button>
-          <button class="btn" id="btnTrigSlopeNeg">EDGE -</button>
-        </div>
-        <div class="control-grid" style="margin-top:6px;">
-          <div class="knob-control">
-            <div class="knob-label">TRIG LEVEL</div>
-            <div class="knob" id="knobTrigLevel"></div>
-            <div class="knob-value" id="valTrigLevel">0.0V</div>
-          </div>
-          <div class="knob-control">
-            <div class="knob-label">HOLD OFF</div>
-            <div class="knob" id="knobHoldOff"></div>
-            <div class="knob-value" id="valHoldOff">0.0ms</div>
-          </div>
+        <div class="control-group">
+          <label>Scale <span id="valScaleCh1" class="val-display">1.0x</span></label>
+          <input type="range" id="rangeScaleCh1" min="0.2" max="2.0" step="0.1" value="1.0">
         </div>
       </div>
 
-      <div class="panel-section">
-        <div class="section-title">Display Mode &amp; CRT Controls</div>
-        <div class="btn-group">
-          <button class="btn active" id="btnModeYT">Y-T Dual</button>
-          <button class="btn" id="btnModeXY">X-Y Mode</button>
+      <div class="panel">
+        <div class="panel-title" style="color: var(--ch2-blue);">Channel 2 Signal</div>
+        <div class="control-group">
+          <select id="selectCh2">
+            <optgroup label="Standard Signals">
+              <option value="cosine">1 kHz Cosine Wave</option>
+              <option value="sawtooth">400 Hz Sawtooth</option>
+              <option value="noise">Thermal Noise</option>
+            </optgroup>
+            <optgroup label="3D Mesh Shapes">
+              <option value="torus">3D Torus</option>
+              <option value="cube">3D Cube</option>
+              <option value="sphere">3D Sphere</option>
+              <option value="cone">3D Cone</option>
+              <option value="cylinder">3D Cylinder</option>
+              <option value="icosahedron">3D Icosahedron</option>
+              <option value="cuboctahedron">3D Cuboctahedron</option>
+              <option value="heart3d">3D Heart</option>
+              <option value="prismTriangle">3D Triangular Prism</option>
+              <option value="prismStar">3D Star Prism</option>
+            </optgroup>
+            <optgroup label="2D Vector Paths">
+              <option value="lissajous32">3:2 Lissajous Knot</option>
+              <option value="trefoil">Trefoil Knot</option>
+              <option value="rose">8-Petal Rose</option>
+              <option value="star2d">5-Point Star</option>
+              <option value="heart2d">Cardioid Heart</option>
+            </optgroup>
+          </select>
         </div>
-        <div class="control-grid" style="margin-top:6px;">
-          <div class="knob-control">
-            <div class="knob-label">INTENSITY</div>
-            <div class="knob" id="knobIntensity"></div>
-            <div class="knob-value" id="valIntensity">80%</div>
-          </div>
-          <div class="knob-control">
-            <div class="knob-label">PERSISTENCE</div>
-            <div class="knob" id="knobPersistence"></div>
-            <div class="knob-value" id="valPersistence">40%</div>
-          </div>
+        <div class="control-group">
+          <label>Scale <span id="valScaleCh2" class="val-display">1.0x</span></label>
+          <input type="range" id="rangeScaleCh2" min="0.2" max="2.0" step="0.1" value="1.0">
+        </div>
+      </div>
+
+      <div class="panel">
+        <div class="panel-title">Trace Settings</div>
+        <div class="control-group">
+          <label>Trace Speed <span id="valSpeed" class="val-display">1.0x</span></label>
+          <input type="range" id="rangeSpeed" min="0.1" max="3.0" step="0.1" value="1.0">
+        </div>
+        <div class="control-group">
+          <label>Glow Intensity <span id="valGlow" class="val-display">80%</span></label>
+          <input type="range" id="rangeGlow" min="0.1" max="1.0" step="0.05" value="0.8">
         </div>
       </div>
     </div>
@@ -348,633 +298,236 @@ select {
 </div>
 
 <script>
-(function(){
-"use strict";
+(function() {
+  const canvas = document.getElementById('scopeCanvas');
+  const ctx = canvas.getContext('2d');
+  
+  const state = {
+    mode: 'YT',
+    ch1Signal: 'sine',
+    ch2Signal: 'cosine',
+    ch1Scale: 1.0,
+    ch2Scale: 1.0,
+    speed: 1.0,
+    glow: 0.8
+  };
 
-/* =========================================================
-   HARDWARE OSCILLOSCOPE ENGINE STATE
-   ========================================================= */
-const ScopeState = {
-  // Horizontal Timebase Settings
-  timeDivIdx: 4, // 1.0 ms
-  timeDivs: [0.05e-3, 0.1e-3, 0.2e-3, 0.5e-3, 1.0e-3, 2.0e-3, 5.0e-3, 10.0e-3, 20.0e-3, 50.0e-3],
-  timeLabels: ["50µs", "100µs", "200µs", "500µs", "1.0ms", "2.0ms", "5.0ms", "10ms", "20ms", "50ms"],
-  hPos: 0.0,
+  function resize() {
+    const rect = canvas.getBoundingClientRect();
+    const dpr = window.devicePixelRatio || 1;
+    canvas.width = rect.width * dpr;
+    canvas.height = rect.height * dpr;
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  }
 
-  // Channel 1
-  ch1VoltsIdx: 3, // 1.0 V
-  voltsDivs: [0.1, 0.2, 0.5, 1.0, 2.0, 5.0],
-  voltsLabels: ["100mV", "200mV", "500mV", "1.0V", "2.0V", "5.0V"],
-  ch1Pos: 0.0,
-  ch1Coupling: 'DC',
-  ch1Signal: 'sine',
+  window.addEventListener('resize', resize);
+  resize();
 
-  // Channel 2
-  ch2VoltsIdx: 3,
-  ch2Pos: 0.0,
-  ch2Coupling: 'DC',
-  ch2Signal: 'cosine',
+  // 3D Geometry Utilities
+  function project3D(pt, rxDeg, ryDeg) {
+    const rx = rxDeg * Math.PI / 180;
+    const ry = ryDeg * Math.PI / 180;
+    const cx = Math.cos(rx), sx = Math.sin(rx);
+    const cy = Math.cos(ry), sy = Math.sin(ry);
+    let [x, y, z] = pt;
 
-  // Triggering
-  trigMode: 'AUTO', // AUTO, NORM, SINGLE
-  trigSlope: 1, // +1 = Rising, -1 = Falling
-  trigLevel: 0.0,
-  holdOff: 0.0,
-  isTriggered: false,
+    let y1 = y * cx - z * sx;
+    let z1 = y * sx + z * cx;
+    let x2 = x * cy + z1 * sy;
+    let z2 = -x * sy + z1 * cy;
 
-  // Display System
-  displayMode: 'YT', // YT or XY
-  intensity: 0.8,
-  persistence: 0.4
-};
+    const scale = 3.0 / (3.0 + z2);
+    return { x: x2 * scale, y: y1 * scale };
+  }
 
-/* =========================================================
-   CANVAS & CRT GRAPHICS SYSTEM
-   ========================================================= */
-const canvas = document.getElementById('scopeCanvas');
-const ctx = canvas.getContext('2d');
-const traceCanvas = document.createElement('canvas');
-const traceCtx = traceCanvas.getContext('2d');
+  function getCubeGeom() {
+    const v = [[-1,-1,-1],[1,-1,-1],[1,1,-1],[-1,1,-1],[-1,-1,1],[1,-1,1],[1,1,1],[-1,1,1]];
+    return [[v[0],v[1],v[2],v[3],v[0]], [v[4],v[5],v[6],v[7],v[4]], [v[0],v[4]], [v[1],v[5]], [v[2],v[6]], [v[3],v[7]]];
+  }
 
-let dpr = 1, width = 0, height = 0;
-const GRID_COLS = 10;
-const GRID_ROWS = 8;
-
-function resizeScope(){
-  const rect = canvas.getBoundingClientRect();
-  dpr = Math.min(window.devicePixelRatio || 1, 2);
-  width = rect.width;
-  height = rect.height;
-
-  canvas.width = Math.round(width * dpr);
-  canvas.height = Math.round(height * dpr);
-  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-
-  traceCanvas.width = Math.round(width * dpr);
-  traceCanvas.height = Math.round(height * dpr);
-  traceCtx.setTransform(dpr, 0, 0, dpr, 0, 0);
-}
-
-window.addEventListener('resize', resizeScope);
-resizeScope();
-
-/* =========================================================
-   3D GEOMETRY GENERATOR & PROJECTION MATHEMATICS
-   ========================================================= */
-function project3D(pt, rxDeg, ryDeg, rzDeg){
-  const rx = rxDeg * Math.PI / 180;
-  const ry = ryDeg * Math.PI / 180;
-  const rz = rzDeg * Math.PI / 180;
-
-  const cx = Math.cos(rx), sx = Math.sin(rx);
-  const cy = Math.cos(ry), sy = Math.sin(ry);
-  const cz = Math.cos(rz), sz = Math.sin(rz);
-
-  let [x, y, z] = pt;
-
-  let y1 = y * cx - z * sx, z1 = y * sx + z * cx;
-  let x2 = x * cy + z1 * sy, z2 = -x * sy + z1 * cy;
-  let x3 = x2 * cz - y1 * sz, y3 = x2 * sz + y1 * cz;
-
-  const dist = 3.5;
-  const scale = dist / (dist + z2);
-
-  return { x: x3 * scale, y: y3 * scale };
-}
-
-function buildCube(){
-  const v = [[-1,-1,-1],[1,-1,-1],[1,1,-1],[-1,1,-1],[-1,-1,1],[1,-1,1],[1,1,1],[-1,1,1]];
-  return [
-    [v[0],v[1],v[2],v[3],v[0]],
-    [v[4],v[5],v[6],v[7],v[4]],
-    [v[0],v[4]], [v[1],v[5]], [v[2],v[6]], [v[3],v[7]]
-  ];
-}
-
-function buildTorus(){
-  const R = 1.0, r = 0.4, rings = 12, segs = 24, strokes = [];
-  for(let i = 0; i < rings; i++){
-    const u = (i * 2 * Math.PI) / rings;
-    const ring = [];
-    for(let j = 0; j <= segs; j++){
-      const v = (j * 2 * Math.PI) / segs;
-      ring.push([(R + r * Math.cos(v)) * Math.cos(u), (R + r * Math.cos(v)) * Math.sin(u), r * Math.sin(v)]);
+  function getTorusGeom() {
+    const R = 1.0, r = 0.4, rings = 12, segs = 20, strokes = [];
+    for(let i=0; i<rings; i++) {
+      const u = (i * 2 * Math.PI) / rings;
+      const ring = [];
+      for(let j=0; j<=segs; j++) {
+        const v = (j * 2 * Math.PI) / segs;
+        ring.push([(R + r * Math.cos(v)) * Math.cos(u), (R + r * Math.cos(v)) * Math.sin(u), r * Math.sin(v)]);
+      }
+      strokes.push(ring);
     }
-    strokes.push(ring);
+    return strokes;
   }
-  return strokes;
-}
 
-function buildCone(){
-  const segs = 16, strokes = [], base = [], apex = [0, 1.2, 0];
-  for(let i = 0; i <= segs; i++){
-    const a = (i * 2 * Math.PI) / segs;
-    const pt = [Math.cos(a), -1, Math.sin(a)];
-    base.push(pt);
-    if(i % 2 === 0) strokes.push([apex, pt]);
-  }
-  strokes.push(base);
-  return strokes;
-}
+  const shapes3D = {
+    cube: getCubeGeom(),
+    torus: getTorusGeom()
+  };
 
-function buildCylinder(){
-  const segs = 16, strokes = [], top = [], bot = [];
-  for(let i = 0; i <= segs; i++){
-    const a = (i * 2 * Math.PI) / segs;
-    const ptT = [Math.cos(a), 1, Math.sin(a)];
-    const ptB = [Math.cos(a), -1, Math.sin(a)];
-    top.push(ptT); bot.push(ptB);
-    if(i % 4 === 0) strokes.push([ptT, ptB]);
-  }
-  strokes.push(top, bot);
-  return strokes;
-}
+  function getSignalValue(type, t, ch) {
+    const f = 1000.0;
+    const a = t * 2 * Math.PI * 200;
 
-function buildIcosahedron(){
-  const t = (1 + Math.sqrt(5)) / 2;
-  const v = [
-    [-1,t,0],[1,t,0],[-1,-t,0],[1,-t,0],
-    [0,-1,t],[0,1,t],[0,-1,-t],[0,1,-t],
-    [t,0,-1],[t,0,1],[-t,0,-1],[-t,0,1]
-  ].map(p => p.map(c => c * 0.7));
+    if (type === 'sine') return Math.sin(2 * Math.PI * f * t);
+    if (type === 'square') return Math.sin(2 * Math.PI * f * t) >= 0 ? 1 : -1;
+    if (type === 'triangle') return (2 / Math.PI) * Math.asin(Math.sin(2 * Math.PI * f * t));
+    if (type === 'cosine') return Math.cos(2 * Math.PI * f * t);
+    if (type === 'sawtooth') return 2 * ((400 * t) % 1) - 1;
+    if (type === 'noise') return (Math.random() - 0.5) * 2;
 
-  const edges = [
-    [0,11],[0,5],[0,1],[0,7],[0,10],[1,5],[5,11],[11,10],[10,7],[7,1],
-    [3,9],[3,4],[3,2],[3,6],[3,8],[4,9],[9,8],[8,6],[6,2],[2,4],
-    [4,5],[5,9],[8,1],[1,6],[10,7],[7,6],[2,10],[11,4]
-  ];
-  return edges.map(e => [v[e[0]], v[e[1]]]);
-}
-
-function buildCuboctahedron(){
-  const v = [
-    [1,1,0],[-1,1,0],[1,-1,0],[-1,-1,0],
-    [1,0,1],[-1,0,1],[1,0,-1],[-1,0,-1],
-    [0,1,1],[0,-1,1],[0,1,-1],[0,-1,-1]
-  ].map(p => p.map(c => c * 0.8));
-
-  const edges = [
-    [0,8],[8,1],[1,10],[10,0],[2,9],[9,3],[3,11],[11,2],
-    [4,8],[8,5],[5,9],[9,4],[6,10],[10,7],[7,11],[11,6],
-    [0,4],[4,2],[2,6],[6,0],[1,5],[5,3],[3,7],[7,1]
-  ];
-  return edges.map(e => [v[e[0]], v[e[1]]]);
-}
-
-function buildSphere(){
-  const rings = 8, segs = 16, strokes = [];
-  for(let i = 1; i < rings; i++){
-    const phi = -Math.PI / 2 + (i * Math.PI) / rings;
-    const ring = [];
-    for(let j = 0; j <= segs; j++){
-      const theta = (j * 2 * Math.PI) / segs;
-      ring.push([Math.cos(phi)*Math.cos(theta), Math.sin(phi), Math.cos(phi)*Math.sin(theta)]);
+    if (type === 'lissajous32') return ch === 1 ? Math.sin(3 * a) : Math.sin(2 * a);
+    if (type === 'trefoil') return ch === 1 ? 0.5 * (Math.sin(a) + 2 * Math.sin(2 * a)) : 0.5 * (Math.cos(a) - 2 * Math.cos(2 * a));
+    if (type === 'rose') return ch === 1 ? Math.cos(4 * a) * Math.cos(a) : Math.cos(4 * a) * Math.sin(a);
+    if (type === 'star2d') {
+      const r = (Math.floor(a / (Math.PI / 5)) % 2 === 0) ? 1.0 : 0.4;
+      return ch === 1 ? r * Math.cos(a) : r * Math.sin(a);
     }
-    strokes.push(ring);
-  }
-  return strokes;
-}
-
-function buildHeart3D(){
-  const rings = 10, segs = 24, strokes = [];
-  for(let i = 0; i <= rings; i++){
-    const u = (i / rings) * Math.PI;
-    const ring = [];
-    for(let j = 0; j <= segs; j++){
-      const v = (j / segs) * 2 * Math.PI;
-      const x = 16 * Math.pow(Math.sin(v), 3) * Math.sin(u);
-      const y = (13 * Math.cos(v) - 5 * Math.cos(2*v) - 2 * Math.cos(3*v) - Math.cos(4*v)) * Math.sin(u);
-      const z = 6 * Math.cos(u);
-      ring.push([x / 16, -(y + 2.5) / 16, z / 16]);
+    if (type === 'heart2d') {
+      const x = 16 * Math.pow(Math.sin(a), 3);
+      const y = 13 * Math.cos(a) - 5 * Math.cos(2 * a) - 2 * Math.cos(3 * a) - Math.cos(4 * a);
+      return ch === 1 ? x / 16 : -y / 16;
     }
-    strokes.push(ring);
-  }
-  return strokes;
-}
 
-function buildPrismTriangle(){
-  const top = [], bot = [], strokes = [];
-  for(let i = 0; i < 3; i++){
-    const a = (i * 2 * Math.PI) / 3 - Math.PI / 2;
-    top.push([Math.cos(a), 1, Math.sin(a)]);
-    bot.push([Math.cos(a), -1, Math.sin(a)]);
-  }
-  top.push(top[0]); bot.push(bot[0]);
-  strokes.push(top, bot);
-  for(let i = 0; i < 3; i++) strokes.push([top[i], bot[i]]);
-  return strokes;
-}
+    if (shapes3D[type]) {
+      const proj = project3D([Math.cos(a), Math.sin(a), 0], 25, t * 100);
+      return ch === 1 ? proj.x : proj.y;
+    }
 
-function buildPrismStar(){
-  const top = [], bot = [], strokes = [];
-  for(let i = 0; i < 10; i++){
-    const a = (i * Math.PI) / 5;
-    const r = (i % 2 === 0) ? 1.0 : 0.4;
-    top.push([r * Math.cos(a), 1, r * Math.sin(a)]);
-    bot.push([r * Math.cos(a), -1, r * Math.sin(a)]);
-  }
-  top.push(top[0]); bot.push(bot[0]);
-  strokes.push(top, bot);
-  for(let i = 0; i < 10; i++) strokes.push([top[i], bot[i]]);
-  return strokes;
-}
-
-const ShapeGeometry = {
-  cube: buildCube(),
-  torus: buildTorus(),
-  cone: buildCone(),
-  cylinder: buildCylinder(),
-  icosahedron: buildIcosahedron(),
-  cuboctahedron: buildCuboctahedron(),
-  sphere: buildSphere(),
-  heart3d: buildHeart3D(),
-  prismTriangle: buildPrismTriangle(),
-  prismStar: buildPrismStar()
-};
-
-/* =========================================================
-   SIGNAL GENERATORS & HARDWARE CIRCUIT EMULATION
-   ========================================================= */
-function generateRawSignal(type, t, channel){
-  const f = 1000.0;
-  const a = t * 2 * Math.PI * 200;
-
-  if(type === 'sine') return 2.5 * Math.sin(2 * Math.PI * f * t);
-  if(type === 'square') return 2.5 * (Math.sin(2 * Math.PI * f * t) >= 0 ? 1 : -1);
-  if(type === 'triangle') return 2.5 * (2 / Math.PI) * Math.asin(Math.sin(2 * Math.PI * f * t));
-  if(type === 'cosine') return 2.5 * Math.cos(2 * Math.PI * f * t);
-  if(type === 'sawtooth') return 2.5 * (2 * ((400 * t) % 1) - 1);
-  if(type === 'cal') return ((t * 1000) % 1 > 0.5) ? 2.5 : -2.5;
-  if(type === 'noise') return (Math.random() - 0.5) * 2.0;
-
-  // Complex 2D Curves
-  if(type === 'lissajous32') return channel === 1 ? 2.5 * Math.sin(3 * a) : 2.5 * Math.sin(2 * a);
-  if(type === 'trefoil') return channel === 1 ? 1.2 * (Math.sin(a) + 2 * Math.sin(2 * a)) : 1.2 * (Math.cos(a) - 2 * Math.cos(2 * a));
-  if(type === 'rose') return channel === 1 ? 2.5 * Math.cos(4 * a) * Math.cos(a) : 2.5 * Math.cos(4 * a) * Math.sin(a);
-  if(type === 'star2d'){
-    const r = (Math.floor(a / (Math.PI / 5)) % 2 === 0) ? 2.5 : 1.0;
-    return channel === 1 ? r * Math.cos(a) : r * Math.sin(a);
-  }
-  if(type === 'heart2d'){
-    const x = 16 * Math.pow(Math.sin(a), 3);
-    const y = 13 * Math.cos(a) - 5 * Math.cos(2 * a) - 2 * Math.cos(3 * a) - Math.cos(4 * a);
-    return channel === 1 ? x / 6 : -y / 6;
+    return 0;
   }
 
-  // 3D Shapes (Projections routed through waveform channels)
-  if(ShapeGeometry[type]){
-    const rotY = t * 100;
-    const proj = project3D([Math.cos(a), Math.sin(a), 0], 25, rotY, 0);
-    return channel === 1 ? proj.x * 2.5 : proj.y * 2.5;
+  function drawGrid(w, h) {
+    ctx.strokeStyle = '#162219';
+    ctx.lineWidth = 1;
+
+    const cols = 10, rows = 8;
+    for (let i = 1; i < cols; i++) {
+      const x = (w / cols) * i;
+      ctx.beginPath();
+      ctx.moveTo(x, 0); ctx.lineTo(x, h);
+      ctx.stroke();
+    }
+    for (let j = 1; j < rows; j++) {
+      const y = (h / rows) * j;
+      ctx.beginPath();
+      ctx.moveTo(0, y); ctx.lineTo(w, y);
+      ctx.stroke();
+    }
+
+    // Center Crosshair
+    ctx.strokeStyle = '#23442d';
+    ctx.beginPath();
+    ctx.moveTo(w / 2, 0); ctx.lineTo(w / 2, h);
+    ctx.moveTo(0, h / 2); ctx.lineTo(w, h / 2);
+    ctx.stroke();
   }
 
-  return 0.0;
-}
+  let time = 0;
 
-// Simulated Hardware Coupling (DC vs AC vs GND)
-function processCoupling(val, coupling){
-  if(coupling === 'GND') return 0.0;
-  if(coupling === 'AC') return val - 0.5;
-  return val;
-}
+  function render() {
+    requestAnimationFrame(render);
+    time += 0.00005 * state.speed;
 
-/* =========================================================
-   REAL-TIME HARDWARE TRIGGER ENGINE
-   ========================================================= */
-function findTriggerIndex(buffer, level, slope){
-  for(let i = 1; i < buffer.length - 1; i++){
-    const prev = buffer[i - 1];
-    const curr = buffer[i];
-    if(slope > 0){
-      if(prev < level && curr >= level) return i;
+    const rect = canvas.getBoundingClientRect();
+    const w = rect.width;
+    const h = rect.height;
+
+    ctx.fillStyle = '#030d07';
+    ctx.fillRect(0, 0, w, h);
+
+    drawGrid(w, h);
+
+    const samples = 400;
+    const centerY = h / 2;
+    const centerX = w / 2;
+
+    ctx.shadowBlur = 8 * state.glow;
+
+    if (state.mode === 'YT') {
+      // Channel 1
+      ctx.strokeStyle = '#e3b341';
+      ctx.shadowColor = '#e3b341';
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      for (let i = 0; i < samples; i++) {
+        const t = time + (i / samples) * 0.002;
+        const v = getSignalValue(state.ch1Signal, t, 1) * state.ch1Scale;
+        const x = (i / samples) * w;
+        const y = centerY - v * (h / 4);
+        if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+      }
+      ctx.stroke();
+
+      // Channel 2
+      ctx.strokeStyle = '#58a6ff';
+      ctx.shadowColor = '#58a6ff';
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      for (let i = 0; i < samples; i++) {
+        const t = time + (i / samples) * 0.002;
+        const v = getSignalValue(state.ch2Signal, t, 2) * state.ch2Scale;
+        const x = (i / samples) * w;
+        const y = centerY - v * (h / 4);
+        if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+      }
+      ctx.stroke();
     } else {
-      if(prev > level && curr <= level) return i;
-    }
-  }
-  return -1;
-}
-
-/* =========================================================
-   CRT RENDERING SYSTEM (RETICULE & PHOSPHOR GLOW)
-   ========================================================= */
-function drawReticle(){
-  ctx.fillStyle = '#030d07';
-  ctx.fillRect(0, 0, width, height);
-
-  const cw = width / GRID_COLS;
-  const ch = height / GRID_ROWS;
-
-  ctx.lineWidth = 1;
-  ctx.strokeStyle = 'rgba(40, 100, 65, 0.35)';
-
-  ctx.beginPath();
-  for(let i = 1; i < GRID_COLS; i++){
-    const x = Math.round(i * cw) + 0.5;
-    ctx.moveTo(x, 0); ctx.lineTo(x, height);
-  }
-  for(let j = 1; j < GRID_ROWS; j++){
-    const y = Math.round(j * ch) + 0.5;
-    ctx.moveTo(0, y); ctx.lineTo(width, y);
-  }
-  ctx.stroke();
-
-  ctx.strokeStyle = 'rgba(70, 160, 100, 0.6)';
-  const midX = Math.round(width / 2) + 0.5;
-  const midY = Math.round(height / 2) + 0.5;
-
-  ctx.beginPath();
-  ctx.moveTo(midX, 0); ctx.lineTo(midX, height);
-  ctx.moveTo(0, midY); ctx.lineTo(width, midY);
-  ctx.stroke();
-
-  ctx.beginPath();
-  const subTicksX = GRID_COLS * 5;
-  const subTicksY = GRID_ROWS * 5;
-  for(let i = 0; i <= subTicksX; i++){
-    const x = i * (width / subTicksX);
-    ctx.moveTo(x, midY - 3); ctx.lineTo(x, midY + 3);
-  }
-  for(let j = 0; j <= subTicksY; j++){
-    const y = j * (height / subTicksY);
-    ctx.moveTo(midX - 3, y); ctx.lineTo(midX + 3, y);
-  }
-  ctx.stroke();
-}
-
-/* =========================================================
-   MAIN SCOPE EXECUTION LOOP
-   ========================================================= */
-let sampleTime = 0;
-let autoRotY = 0;
-
-function renderScope(){
-  requestAnimationFrame(renderScope);
-
-  sampleTime += 0.00005;
-  autoRotY += 0.5;
-
-  const fade = Math.max(0.05, 1.0 - ScopeState.persistence);
-  traceCtx.fillStyle = `rgba(3, 13, 7, ${fade})`;
-  traceCtx.fillRect(0, 0, width, height);
-
-  const pixelsPerDivY = height / GRID_ROWS;
-  const pixelsPerDivX = width / GRID_COLS;
-  const centerY = height / 2;
-  const centerX = width / 2;
-  const alpha = ScopeState.intensity;
-
-  // Direct 3D Mesh Rendering in X-Y Mode when a 3D Shape is Selected
-  if(ScopeState.displayMode === 'XY' && (ShapeGeometry[ScopeState.ch1Signal] || ShapeGeometry[ScopeState.ch2Signal])){
-    const activeShape = ShapeGeometry[ScopeState.ch1Signal] ? ScopeState.ch1Signal : ScopeState.ch2Signal;
-    const geom = ShapeGeometry[activeShape];
-
-    traceCtx.strokeStyle = `rgba(51, 255, 119, ${alpha})`;
-    traceCtx.shadowColor = 'rgba(51, 255, 119, 0.8)';
-    traceCtx.shadowBlur = 8 * alpha;
-    traceCtx.lineWidth = 2.0;
-
-    traceCtx.beginPath();
-    geom.forEach(stroke => {
-      for(let i = 0; i < stroke.length; i++){
-        const proj = project3D(stroke[i], 25, autoRotY, 0);
-        const x = centerX + (proj.x * 2.2 + ScopeState.hPos) * pixelsPerDivX;
-        const y = centerY - (proj.y * 2.2 + ScopeState.ch1Pos) * pixelsPerDivY;
-        if(i === 0) traceCtx.moveTo(x, y); else traceCtx.lineTo(x, y);
+      // X-Y Mode
+      ctx.strokeStyle = '#33ff77';
+      ctx.shadowColor = '#33ff77';
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      for (let i = 0; i < samples; i++) {
+        const t = time + (i / samples) * 0.005;
+        const vx = getSignalValue(state.ch1Signal, t, 1) * state.ch1Scale;
+        const vy = getSignalValue(state.ch2Signal, t, 2) * state.ch2Scale;
+        const x = centerX + vx * (w / 4);
+        const y = centerY - vy * (h / 4);
+        if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
       }
-    });
-    traceCtx.stroke();
-  } else {
-    // STANDARD Y-T AND X-Y SIGNAL SAMPLING
-    const timeDiv = ScopeState.timeDivs[ScopeState.timeDivIdx];
-    const totalTimeWindow = timeDiv * GRID_COLS;
-    const numSamples = 600;
-    const dt = totalTimeWindow / numSamples;
-
-    const ch1Buffer = new Float32Array(numSamples);
-    const ch2Buffer = new Float32Array(numSamples);
-    const timeOffset = ScopeState.hPos * timeDiv;
-
-    for(let i = 0; i < numSamples; i++){
-      const t = sampleTime + i * dt + timeOffset;
-      ch1Buffer[i] = processCoupling(generateRawSignal(ScopeState.ch1Signal, t, 1), ScopeState.ch1Coupling);
-      ch2Buffer[i] = processCoupling(generateRawSignal(ScopeState.ch2Signal, t, 2), ScopeState.ch2Coupling);
+      ctx.stroke();
     }
 
-    let trigOffsetIndex = findTriggerIndex(ch1Buffer, ScopeState.trigLevel, ScopeState.trigSlope);
-
-    const trigLed = document.getElementById('trigLed');
-    const trigStatus = document.getElementById('trigStatus');
-
-    if(trigOffsetIndex !== -1){
-      ScopeState.isTriggered = true;
-      trigLed.className = 'led green';
-      trigStatus.textContent = "TRIG'D";
-    } else {
-      ScopeState.isTriggered = false;
-      if(ScopeState.trigMode === 'NORM'){
-        trigLed.className = 'led red';
-        trigStatus.textContent = 'WAIT';
-      } else {
-        trigLed.className = 'led green';
-        trigStatus.textContent = 'AUTO';
-        trigOffsetIndex = 0;
-      }
-    }
-
-    if(ScopeState.trigMode !== 'NORM' || ScopeState.isTriggered){
-      const voltDiv1 = ScopeState.voltsDivs[ScopeState.ch1VoltsIdx];
-      const voltDiv2 = ScopeState.voltsDivs[ScopeState.ch2VoltsIdx];
-
-      traceCtx.lineWidth = 2.0;
-
-      if(ScopeState.displayMode === 'YT'){
-        // CHANNEL 1 (YELLOW)
-        traceCtx.strokeStyle = `rgba(255, 204, 0, ${alpha})`;
-        traceCtx.shadowColor = 'rgba(255, 204, 0, 0.6)';
-        traceCtx.shadowBlur = 6 * alpha;
-
-        traceCtx.beginPath();
-        for(let i = 0; i < numSamples - trigOffsetIndex; i++){
-          const sampleIdx = i + trigOffsetIndex;
-          const x = (i / (numSamples - 1)) * width;
-          const v = ch1Buffer[sampleIdx];
-          const y = centerY - ((v / voltDiv1) + ScopeState.ch1Pos) * pixelsPerDivY;
-          if(i === 0) traceCtx.moveTo(x, y); else traceCtx.lineTo(x, y);
-        }
-        traceCtx.stroke();
-
-        // CHANNEL 2 (CYAN)
-        traceCtx.strokeStyle = `rgba(0, 204, 255, ${alpha})`;
-        traceCtx.shadowColor = 'rgba(0, 204, 255, 0.6)';
-        traceCtx.shadowBlur = 6 * alpha;
-
-        traceCtx.beginPath();
-        for(let i = 0; i < numSamples - trigOffsetIndex; i++){
-          const sampleIdx = i + trigOffsetIndex;
-          const x = (i / (numSamples - 1)) * width;
-          const v = ch2Buffer[sampleIdx];
-          const y = centerY - ((v / voltDiv2) + ScopeState.ch2Pos) * pixelsPerDivY;
-          if(i === 0) traceCtx.moveTo(x, y); else traceCtx.lineTo(x, y);
-        }
-        traceCtx.stroke();
-      } else {
-        // X-Y VECTOR MODE (PHOSPHOR GREEN)
-        traceCtx.strokeStyle = `rgba(51, 255, 119, ${alpha})`;
-        traceCtx.shadowColor = 'rgba(51, 255, 119, 0.8)';
-        traceCtx.shadowBlur = 8 * alpha;
-
-        traceCtx.beginPath();
-        for(let i = 0; i < numSamples; i++){
-          const vx = ch1Buffer[i];
-          const vy = ch2Buffer[i];
-          const x = centerX + ((vx / voltDiv1) + ScopeState.hPos) * pixelsPerDivX;
-          const y = centerY - ((vy / voltDiv2) + ScopeState.ch1Pos) * pixelsPerDivY;
-          if(i === 0) traceCtx.moveTo(x, y); else traceCtx.lineTo(x, y);
-        }
-        traceCtx.stroke();
-      }
-    }
+    ctx.shadowBlur = 0;
   }
 
-  drawReticle();
-  ctx.drawImage(traceCanvas, 0, 0, width, height);
-}
-
-/* =========================================================
-   INTERACTIVE ROTARY KNOB CONTROLLER HARDWARE BINDINGS
-   ========================================================= */
-function setupKnob(id, onRotate){
-  const el = document.getElementById(id);
-  let startY = 0;
-  let currentRotation = 0;
-
-  function onPointerMove(e){
-    const deltaY = startY - e.clientY;
-    currentRotation += deltaY * 2;
-    el.style.transform = `rotate(${currentRotation}deg)`;
-    startY = e.clientY;
-    onRotate(deltaY);
-  }
-
-  function onPointerUp(){
-    window.removeEventListener('pointermove', onPointerMove);
-    window.removeEventListener('pointerup', onPointerUp);
-  }
-
-  el.addEventListener('pointerdown', e => {
-    startY = e.clientY;
-    window.addEventListener('pointermove', onPointerMove);
-    window.addEventListener('pointerup', onPointerUp);
+  // Event Handlers
+  document.getElementById('btnModeYT').addEventListener('click', (e) => {
+    state.mode = 'YT';
+    e.target.classList.add('active');
+    document.getElementById('btnModeXY').classList.remove('active');
   });
-}
 
-// BIND HARDWARE CONTROLS
-setupKnob('knobTimeDiv', delta => {
-  if(delta > 0 && ScopeState.timeDivIdx < ScopeState.timeDivs.length - 1) ScopeState.timeDivIdx++;
-  if(delta < 0 && ScopeState.timeDivIdx > 0) ScopeState.timeDivIdx--;
-  document.getElementById('valTimeDiv').textContent = ScopeState.timeLabels[ScopeState.timeDivIdx];
-  document.getElementById('readoutTimeDiv').textContent = ScopeState.timeLabels[ScopeState.timeDivIdx];
-});
+  document.getElementById('btnModeXY').addEventListener('click', (e) => {
+    state.mode = 'XY';
+    e.target.classList.add('active');
+    document.getElementById('btnModeYT').classList.remove('active');
+  });
 
-setupKnob('knobHPos', delta => {
-  ScopeState.hPos += delta * 0.05;
-  document.getElementById('valHPos').textContent = ScopeState.hPos.toFixed(1);
-});
+  document.getElementById('selectCh1').addEventListener('change', (e) => state.ch1Signal = e.target.value);
+  document.getElementById('selectCh2').addEventListener('change', (e) => state.ch2Signal = e.target.value);
 
-setupKnob('knobCh1Volts', delta => {
-  if(delta > 0 && ScopeState.ch1VoltsIdx < ScopeState.voltsDivs.length - 1) ScopeState.ch1VoltsIdx++;
-  if(delta < 0 && ScopeState.ch1VoltsIdx > 0) ScopeState.ch1VoltsIdx--;
-  document.getElementById('valCh1Volts').textContent = ScopeState.voltsLabels[ScopeState.ch1VoltsIdx];
-});
+  document.getElementById('rangeScaleCh1').addEventListener('input', (e) => {
+    state.ch1Scale = parseFloat(e.target.value);
+    document.getElementById('valScaleCh1').textContent = state.ch1Scale.toFixed(1) + 'x';
+  });
 
-setupKnob('knobCh1Pos', delta => {
-  ScopeState.ch1Pos += delta * 0.05;
-  document.getElementById('valCh1Pos').textContent = ScopeState.ch1Pos.toFixed(1);
-});
+  document.getElementById('rangeScaleCh2').addEventListener('input', (e) => {
+    state.ch2Scale = parseFloat(e.target.value);
+    document.getElementById('valScaleCh2').textContent = state.ch2Scale.toFixed(1) + 'x';
+  });
 
-setupKnob('knobCh2Volts', delta => {
-  if(delta > 0 && ScopeState.ch2VoltsIdx < ScopeState.voltsDivs.length - 1) ScopeState.ch2VoltsIdx++;
-  if(delta < 0 && ScopeState.ch2VoltsIdx > 0) ScopeState.ch2VoltsIdx--;
-  document.getElementById('valCh2Volts').textContent = ScopeState.voltsLabels[ScopeState.ch2VoltsIdx];
-});
+  document.getElementById('rangeSpeed').addEventListener('input', (e) => {
+    state.speed = parseFloat(e.target.value);
+    document.getElementById('valSpeed').textContent = state.speed.toFixed(1) + 'x';
+  });
 
-setupKnob('knobCh2Pos', delta => {
-  ScopeState.ch2Pos += delta * 0.05;
-  document.getElementById('valCh2Pos').textContent = ScopeState.ch2Pos.toFixed(1);
-});
+  document.getElementById('rangeGlow').addEventListener('input', (e) => {
+    state.glow = parseFloat(e.target.value);
+    document.getElementById('valGlow').textContent = Math.round(state.glow * 100) + '%';
+  });
 
-setupKnob('knobTrigLevel', delta => {
-  ScopeState.trigLevel += delta * 0.05;
-  document.getElementById('valTrigLevel').textContent = ScopeState.trigLevel.toFixed(1) + 'V';
-});
-
-setupKnob('knobHoldOff', delta => {
-  ScopeState.holdOff = Math.max(0, ScopeState.holdOff + delta * 0.1);
-  document.getElementById('valHoldOff').textContent = ScopeState.holdOff.toFixed(1) + 'ms';
-});
-
-setupKnob('knobIntensity', delta => {
-  ScopeState.intensity = Math.max(0.1, Math.min(1.0, ScopeState.intensity + delta * 0.01));
-  document.getElementById('valIntensity').textContent = Math.round(ScopeState.intensity * 100) + '%';
-});
-
-setupKnob('knobPersistence', delta => {
-  ScopeState.persistence = Math.max(0.0, Math.min(0.95, ScopeState.persistence + delta * 0.01));
-  document.getElementById('valPersistence').textContent = Math.round(ScopeState.persistence * 100) + '%';
-});
-
-// COUPLING BUTTONS
-document.getElementById('btnCh1DC').addEventListener('click', () => { ScopeState.ch1Coupling = 'DC'; updateCouplingBtns(); });
-document.getElementById('btnCh1AC').addEventListener('click', () => { ScopeState.ch1Coupling = 'AC'; updateCouplingBtns(); });
-document.getElementById('btnCh1GND').addEventListener('click', () => { ScopeState.ch1Coupling = 'GND'; updateCouplingBtns(); });
-
-document.getElementById('btnCh2DC').addEventListener('click', () => { ScopeState.ch2Coupling = 'DC'; updateCouplingBtns(); });
-document.getElementById('btnCh2AC').addEventListener('click', () => { ScopeState.ch2Coupling = 'AC'; updateCouplingBtns(); });
-document.getElementById('btnCh2GND').addEventListener('click', () => { ScopeState.ch2Coupling = 'GND'; updateCouplingBtns(); });
-
-function updateCouplingBtns(){
-  document.getElementById('btnCh1DC').className = 'btn ' + (ScopeState.ch1Coupling === 'DC' ? 'active' : '');
-  document.getElementById('btnCh1AC').className = 'btn ' + (ScopeState.ch1Coupling === 'AC' ? 'active' : '');
-  document.getElementById('btnCh1GND').className = 'btn ' + (ScopeState.ch1Coupling === 'GND' ? 'active' : '');
-  document.getElementById('btnCh2DC').className = 'btn ' + (ScopeState.ch2Coupling === 'DC' ? 'active' : '');
-  document.getElementById('btnCh2AC').className = 'btn ' + (ScopeState.ch2Coupling === 'AC' ? 'active' : '');
-  document.getElementById('btnCh2GND').className = 'btn ' + (ScopeState.ch2Coupling === 'GND' ? 'active' : '');
-}
-
-// TRIGGER MODE BUTTONS
-document.getElementById('btnTrigAuto').addEventListener('click', () => { ScopeState.trigMode = 'AUTO'; updateTrigBtns(); });
-document.getElementById('btnTrigNorm').addEventListener('click', () => { ScopeState.trigMode = 'NORM'; updateTrigBtns(); });
-document.getElementById('btnTrigSingle').addEventListener('click', () => { ScopeState.trigMode = 'SINGLE'; updateTrigBtns(); });
-document.getElementById('btnTrigSlopePos').addEventListener('click', () => { ScopeState.trigSlope = 1; updateTrigBtns(); });
-document.getElementById('btnTrigSlopeNeg').addEventListener('click', () => { ScopeState.trigSlope = -1; updateTrigBtns(); });
-
-function updateTrigBtns(){
-  document.getElementById('btnTrigAuto').className = 'btn ' + (ScopeState.trigMode === 'AUTO' ? 'active' : '');
-  document.getElementById('btnTrigNorm').className = 'btn ' + (ScopeState.trigMode === 'NORM' ? 'active' : '');
-  document.getElementById('btnTrigSingle').className = 'btn ' + (ScopeState.trigMode === 'SINGLE' ? 'active' : '');
-  document.getElementById('btnTrigSlopePos').className = 'btn ' + (ScopeState.trigSlope === 1 ? 'active' : '');
-  document.getElementById('btnTrigSlopeNeg').className = 'btn ' + (ScopeState.trigSlope === -1 ? 'active' : '');
-}
-
-// SIGNALS & DISPLAY MODES
-document.getElementById('selectCh1Signal').addEventListener('change', e => { ScopeState.ch1Signal = e.target.value; });
-document.getElementById('selectCh2Signal').addEventListener('change', e => { ScopeState.ch2Signal = e.target.value; });
-
-document.getElementById('btnModeYT').addEventListener('click', () => {
-  ScopeState.displayMode = 'YT';
-  document.getElementById('btnModeYT').className = 'btn active';
-  document.getElementById('btnModeXY').className = 'btn';
-  document.getElementById('readoutDisplayMode').textContent = 'YT (CH1+CH2)';
-});
-
-document.getElementById('btnModeXY').addEventListener('click', () => {
-  ScopeState.displayMode = 'XY';
-  document.getElementById('btnModeXY').className = 'btn active';
-  document.getElementById('btnModeYT').className = 'btn';
-  document.getElementById('readoutDisplayMode').textContent = 'X-Y VECTOR';
-});
-
-requestAnimationFrame(renderScope);
+  render();
 })();
 </script>
 </body>
